@@ -18,6 +18,8 @@
   <depend package="robot_mechanism_controllers"/>
   <depend package="pr2_manipulation_controllers"/>
 
+  <depend package="pykdl_utils"/>
+
 </package>
 
 

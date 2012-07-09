@@ -41,15 +41,6 @@ import rospy
 from urdf_parser_py.urdf import URDF
 from pykdl_utils.joint_kinematics import JointKinematics
 
-def create_ep_arm(arm_side, arm_type=PR2Arm, base_link="torso_lift_link",  
-                  end_link="%s_gripper_tool_frame", urdf_filename=None,
-                  controller_name=None, timeout=5.):
-    if urdf_filename is None:
-        robot = URDF.load_from_parameter_server(verbose=False)
-    else:
-        robot = URDF.load_xml_file(urdf_filename, verbose=False)
-    return arm_type(arm_side, robot, base_link=base_link, end_link=end_link,
-                    controller_name=controller_name, timeout=timeout)
 
 ##
 # Base class for interacting with a realtime controller using an equilibrium point control
@@ -144,7 +135,7 @@ class EPArmBase(JointKinematics):
             if self.ep is None:
                 rospy.logwarn("[ep_arm_base] Equilibrium point not read yet.")
                 return True
-            return rospy.get_time() - self.ep_time > stale_time:
+            return rospy.get_time() - self.ep_time > stale_time
 
     ##
     # Method to be implemented by subclasses to record the equilibrium point.
@@ -152,3 +143,13 @@ class EPArmBase(JointKinematics):
         with self.ep_lock:
             self.ep_time = rospy.get_time()
             self.ep = ep
+
+def create_ep_arm(arm_side, arm_type=EPArmBase, base_link="torso_lift_link",  
+                  end_link="%s_gripper_tool_frame", urdf_filename=None,
+                  controller_name=None, timeout=5.):
+    if urdf_filename is None:
+        robot = URDF.load_from_parameter_server(verbose=False)
+    else:
+        robot = URDF.load_xml_file(urdf_filename, verbose=False)
+    return arm_type(arm_side, robot, base_link=base_link, end_link=end_link,
+                    controller_name=controller_name, timeout=timeout)

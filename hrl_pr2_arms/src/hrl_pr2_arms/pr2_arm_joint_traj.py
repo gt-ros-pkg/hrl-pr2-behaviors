@@ -30,6 +30,7 @@
 # Author: Kelsey Hawkins
 
 import numpy as np
+import copy
 
 import roslib
 roslib.load_manifest('hrl_pr2_arms')
@@ -50,7 +51,7 @@ class PR2ArmJointTraj(EPArmBase):
     def __init__(self, arm_side, urdf, base_link='torso_lift_link', end_link='%s_gripper_tool_frame', 
                  controller_name='/%s_arm_controller', kdl_tree=None, timeout=1.):
         super(PR2ArmJointTraj, self).__init__(arm_side, urdf, base_link, end_link, 
-                                                    controller_name, kdl_tree, timeout)
+                                              controller_name, kdl_tree, timeout)
         self.joint_action_client = actionlib.SimpleActionClient(
                                        self.controller_name + '/joint_trajectory_action',
                                        JointTrajectoryAction)

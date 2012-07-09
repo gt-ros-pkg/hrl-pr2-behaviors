@@ -49,7 +49,7 @@ def extract_twist(msg):
 ##
 # Base class for interacting with the Cartesian controllers on the PR2.
 # The equilibrium points are pose-like objects.
-class PR2ArmCartBase(PR2Arm):
+class PR2ArmCartBase(EPArmBase):
     def __init__(self, arm_side, urdf, base_link='torso_lift_link', end_link='%s_gripper_tool_frame', 
                  controller_name='/%s_cart', kdl_tree=None, timeout=1.):
         super(PR2ArmCartBase, self).__init__(arm_side, urdf, base_link, end_link, 
@@ -73,7 +73,7 @@ class PR2ArmCartBase(PR2Arm):
         pos_b, rot_b = ep_b
         num_samps = len(t_vals)
         pos_waypoints = (np.array(pos_a) + 
-                         np.array(np.tile(pos_b - pos_a, (1, num_samps))) * np.array(t_vals)
+                         np.array(np.tile(pos_b - pos_a, (1, num_samps))) * np.array(t_vals))
         pos_waypoints = [np.mat(pos).T for pos in pos_waypoints.T]
         rot_homo_a, rot_homo_b = np.eye(4), np.eye(4)
         rot_homo_a[:3,:3] = rot_a

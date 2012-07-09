@@ -35,7 +35,7 @@ class ArmPoseMoveGuiBackend(object):
             if not self.apm_ctrl.is_moving():
                 if msg.is_trajectory:
                     filename = self.traj_dict[msg.traj_name]['file']
-                    filepath = roslib.substitution_args.resolve_args(POSE_TRAJ_PARAM_PREFIX + filename)
+                    filepath = roslaunch.substitution_args.resolve_args(POSE_TRAJ_PARAM_PREFIX + filename)
                     if msg.is_setup:
                         result = self.apm_ctrl.move_to_setup_from_file(filepath, 
                                                      reverse=not msg.is_forward, blocking=False)
@@ -44,7 +44,7 @@ class ArmPoseMoveGuiBackend(object):
                                                      reverse=not msg.is_forward, blocking=False)
                 else:
                     filename = self.pose_dict[msg.traj_name]['file']
-                    filepath = roslib.substitution_args.resolve_args(POSE_TRAJ_PARAM_PREFIX + filename)
+                    filepath = roslaunch.substitution_args.resolve_args(POSE_TRAJ_PARAM_PREFIX + filename)
         elif msg.type == msg.STOP:
             self.apm_ctrl.pause_moving()
         elif msg.type == msg.RESET:

@@ -10,7 +10,7 @@ roslib.load_manifest("hrl_pr2_traj_playback")
 import rospy
 from std_msgs.msg import String
 from std_srvs.srv import Empty, EmptyResponse
-import roslib.substitution_args
+import roslaunch.substitution_args
 import actionlib
 
 from hrl_pr2_arms.pr2_arm_joint_traj import create_ep_arm, PR2ArmJointTraj
@@ -176,7 +176,7 @@ class TrajPlayback(object):
 
 def load_arm_file(filename):
     try:
-        f = file(roslib.substitution_args.resolve_args(filename), "r")
+        f = file(roslaunch.substitution_args.resolve_args(filename), "r")
         traj, arm_char, rate = pickle.load(f)
         if arm_char not in ['r', 'l']:
             raise Exception("arm_char not r or l")
@@ -397,7 +397,7 @@ def main():
                     c = stdscr.getch()
             curses.wrapper(wait_for_key)
 
-            traj_saver.stop_record(roslib.substitution_args.resolve_args(opts.filename))
+            traj_saver.stop_record(roslaunch.substitution_args.resolve_args(opts.filename))
             ctrl_switcher.carefree_switch(arm_char, opts.ctrl_name, PARAM_FILE_LOW, reset=False)
             return
         else:
