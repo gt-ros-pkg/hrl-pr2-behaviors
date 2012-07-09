@@ -1,0 +1,24 @@
+<package>
+  <description brief="hrl_pr2_force_ctrl">
+
+     hrl_pr2_force_ctrl
+
+  </description>
+  <author>Kelsey Hawkins</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/hrl_pr2_force_ctrl</url>
+  <depend package="hrl_pr2_arms"/>
+  <depend package="tf"/>
+
+  <depend package="pr2_controller_interface"/>
+  <depend package="realtime_tools"/>
+  <depend package="rosrt"/>
+  <depend package="pr2_manipulation_controllers"/>
+
+  <export>
+    <pr2_controller_interface plugin="${prefix}/controller_plugins.xml" />
+  </export>
+</package>
+
+

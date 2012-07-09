@@ -1,0 +1,5 @@
+<library path="lib/libhrl_pr2_force_ctrl">
+  <class name="hrl_pr2_force_ctrl/HybridForceController" 
+         type="hrl_pr2_force_ctrl::HybridForceController"           
+         base_class_type="pr2_controller_interface::Controller" />
+</library>
