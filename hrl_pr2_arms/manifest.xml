@@ -1,0 +1,23 @@
+<package>
+  <description brief="hrl_pr2_arms">
+     Python class to control the PR2 arms using an equilibrium control framework. 
+  </description>
+  <author>Kelsey Hawkins, Advisor: Prof. Charlie Kemp,
+          Lab: Healthcare Robotics Lab </author>
+  <license>New BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/hrl_pr2_arms</url>
+  <depend package="rospy"/>
+  <depend package="visualization_msgs"/>
+  <depend package="pr2_controllers_msgs"/>
+  <depend package="actionlib"/>
+  <depend package="rosparam"/>
+  <depend package="trajectory_msgs"/>
+  <depend package="pr2_mechanism_msgs"/>
+  <depend package="object_manipulation_msgs"/>
+  <depend package="robot_mechanism_controllers"/>
+  <depend package="pr2_manipulation_controllers"/>
+
+</package>
+
+
