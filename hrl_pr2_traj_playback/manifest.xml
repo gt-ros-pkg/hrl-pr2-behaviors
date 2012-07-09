@@ -1,0 +1,17 @@
+<package>
+  <description brief="hrl_pr2_traj_playback">
+
+     For recording and playing back trajectories safely.
+
+  </description>
+  <author>Kelsey Hawkins</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/hrl_pr2_traj_playback</url>
+  <depend package="std_srvs"/>
+  <depend package="actionlib"/>
+  <depend package="hrl_pr2_arms"/>
+
+</package>
+
+

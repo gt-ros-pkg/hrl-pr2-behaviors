@@ -1,0 +1,6 @@
+<launch>
+    <node pkg="hrl_pr2_traj_playback" name="l_traj_playback" type="traj_playback.py"
+          output="screen" args="-v -l" />
+    <node pkg="hrl_pr2_traj_playback" name="r_traj_playback" type="traj_playback.py"
+          output="screen" args="-v -r" />
+</launch>
