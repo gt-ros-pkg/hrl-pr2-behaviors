@@ -63,7 +63,7 @@ void writeTag(const ar_pose::ARMarker::Ptr& ar_tag, const sensor_msgs::ImageCons
             tag_pt.setY(j * marker_width - marker_width/2.);
             tag_pt.setZ(0);
             tag_pt.setW(1);
-            btVector3 tag_pt_rot = tf_pose * tag_pt;
+            tf::Vector3 tag_pt_rot = tf_pose * tag_pt;
             cv::Point3d proj_pt_cv(tag_pt_rot.getX(), tag_pt_rot.getY(), tag_pt_rot.getZ());
             cv_pts.push_back(cam_model.project3dToPixel(proj_pt_cv));
         }
