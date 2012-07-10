@@ -103,4 +103,31 @@ class ControllerSwitcher:
         resp = self.switch_controller_srv(start_controllers, stop_controllers, 1)
         return resp.ok
 
+    ##
+    # Lists the controllers which are currently running.
+    # @return List of controller names.
+    def list_running(self):
+        resp = self.list_controllers_srv()
+        running_ctrls = []
+        for controller, state in zip(resp.controllers, resp.state):
+            if state == 'running':
+                running_ctrls.append(controller)
+        return running_ctrls
 
+    ##
+    # Lists the controllers which are currently stopped.
+    # @return List of controller names.
+    def list_stopped(self):
+        resp = self.list_controllers_srv()
+        running_ctrls = []
+        for controller, state in zip(resp.controllers, resp.state):
+            if state == 'stopped':
+                running_ctrls.append(controller)
+        return running_ctrls
+
+    ##
+    # Lists the controllers which are currently loaded.
+    # @return List of controller names.
+    def list_loaded(self):
+        resp = self.list_controllers_srv()
+        return resp.controllers
