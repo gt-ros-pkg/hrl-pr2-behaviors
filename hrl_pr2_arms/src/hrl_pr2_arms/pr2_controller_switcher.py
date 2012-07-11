@@ -6,7 +6,7 @@ import roslaunch.substitution_args
 from pr2_mechanism_msgs.srv import LoadController, UnloadController, SwitchController, ListControllers
 
 POSSIBLE_ARM_CONTROLLERS = ['%s_arm_controller', '%s_cart']
-POSSIBLE_CONTROLLERS_PARAMETER = "/pr2_controller_switcher/arm_controllers"
+POSSIBLE_CONTROLLERS_PARAMETER = "/pr2_controller_manager/possible_arm_ctrls"
 
 ##
 # Offers controller switching inside python on the fly.
