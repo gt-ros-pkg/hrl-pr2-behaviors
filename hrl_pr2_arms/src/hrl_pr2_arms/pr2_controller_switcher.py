@@ -6,7 +6,7 @@ import roslaunch.substitution_args
 from pr2_mechanism_msgs.srv import LoadController, UnloadController, SwitchController, ListControllers
 
 POSSIBLE_ARM_CONTROLLERS = ['%s_arm_controller', '%s_cart']
-POSSIBLE_CONTROLLERS_PARAMETER = "/pr2_controller_manager/possible_arm_ctrls"
+POSSIBLE_CTRLS_PARAMETER = "/pr2_controller_manager/%s_arm_possible_ctrls"
 
 ##
 # Offers controller switching inside python on the fly.
@@ -24,8 +24,9 @@ class ControllerSwitcher:
         self.unload_controller.wait_for_service()
         self.switch_controller_srv.wait_for_service()
         self.list_controllers_srv.wait_for_service()
-        if POSSIBLE_CONTROLLERS_PARAMETER not in rosparam.list_params(""):
-            rosparam.set_param_raw(POSSIBLE_CONTROLLERS_PARAMETER, POSSIBLE_ARM_CONTROLLERS)
+        for arm in ['r', 'l']:
+            if POSSIBLE_CTRLS_PARAMETER % arm not in rosparam.list_params(""):
+                rosparam.set_param_raw(POSSIBLE_CTRLS_PARAMETER % arm, POSSIBLE_ARM_CONTROLLERS % arm)
         rospy.loginfo("[pr2_controller_switcher] ControllerSwitcher ready.")
 
     ##
@@ -74,10 +75,10 @@ class ControllerSwitcher:
                 return
             else:
                 rosparam.upload_params("", {new_ctrl : params[0][0][new_ctrl]})
-        possible_controllers = rosparam.get_param(POSSIBLE_CONTROLLERS_PARAMETER)
-        if new_controller not in possible_controllers:
-            possible_controllers.append(new_controller)
-            rosparam.set_param_raw(POSSIBLE_CONTROLLERS_PARAMETER, possible_controllers)
+        possible_controllers = rosparam.get_param(POSSIBLE_CTRLS_PARAMETER % arm)
+        if new_ctrl not in possible_controllers:
+            possible_controllers.append(new_ctrl)
+            rosparam.set_param_raw(POSSIBLE_CTRLS_PARAMETER % arm, possible_controllers)
         check_arm_controllers = []
         for controller in possible_controllers:
             if '%s' in controller:
