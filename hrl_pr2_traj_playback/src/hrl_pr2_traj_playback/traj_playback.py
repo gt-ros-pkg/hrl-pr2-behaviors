@@ -302,9 +302,7 @@ class TrajectoryServer(object):
         self.feedback_pub.publish(msg)
 
     def traj_play_cb(self, goal):
-        print "SUPPPP"
         traj, arm_char, rate = load_arm_file(goal.filepath)
-        print traj, "HHHHHHHHHIIIIIIIIIIIIIIII!!!!!", goal.filepath
         if traj is None:
             self.traj_srv.set_aborted(text="Failed to open file.")
             return

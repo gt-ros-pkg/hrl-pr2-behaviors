@@ -47,7 +47,7 @@ import hrl_geom.transformations as trans
 class PR2ArmJTransposeTask(PR2ArmCartPostureBase):
     def __init__(self, arm_side, urdf, base_link='torso_lift_link', end_link='%s_gripper_tool_frame', 
                  controller_name='/%s_cart', kdl_tree=None, timeout=1.):
-        super(PR2ArmJTranspose, self).__init__(arm_side, urdf, base_link, end_link, 
+        super(PR2ArmJTransposeTask, self).__init__(arm_side, urdf, base_link, end_link, 
                                                controller_name, kdl_tree, timeout)
         self.command_gains_pub = rospy.Publisher(self.controller_name + '/gains', CartesianGains)
         rospy.Subscriber(self.controller_name + '/state', JTTaskControllerState, 
@@ -77,7 +77,9 @@ class PR2ArmJTransposeTask(PR2ArmCartPostureBase):
                                                   ctrl_state.F.torque.y,
                                                   ctrl_state.F.torque.z])
 
-    def set_gains(self, p_gains, d_gains, frame):
+    def set_gains(self, p_gains, d_gains, frame=None):
+        if frame is None:
+            frame = self.end_link
         all_gains = list(p_gains) + list(d_gains)
         gains_msg = CartesianGains(Header(0, rospy.Time.now(), frame),
                                    all_gains, [])

@@ -30,6 +30,7 @@
 # Author: Kelsey Hawkins
 
 import numpy as np
+import copy
 
 import roslib
 roslib.load_manifest('hrl_pr2_arms')
@@ -100,8 +101,10 @@ class PR2ArmCartBase(EPArmBase):
 # Class which extends the PR2ArmCartBase to provide functionality for changing the
 # posture.
 class PR2ArmCartPostureBase(PR2ArmCartBase):
-    def __init__(self, arm_side, kinematics, controller_name='/%s_cart', timeout=5.):
-        super(PR2ArmCartPostureBase, self).__init__(arm_side, kinematics, controller_name, timeout)
+    def __init__(self, arm_side, urdf, base_link='torso_lift_link', end_link='%s_gripper_tool_frame', 
+                 controller_name='/%s_cart', kdl_tree=None, timeout=1.):
+        super(PR2ArmCartPostureBase, self).__init__(arm_side, urdf, base_link, end_link, 
+                                             controller_name, kdl_tree, timeout)
         self.command_posture_pub = rospy.Publisher(self.controller_name + '/command_posture', 
                                                    Float64MultiArray)
 

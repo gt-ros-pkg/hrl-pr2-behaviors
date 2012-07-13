@@ -32,6 +32,7 @@
 
 from threading import Lock
 import numpy as np
+import copy
 
 import roslib
 roslib.load_manifest('hrl_pr2_arms')
