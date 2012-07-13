@@ -30,7 +30,7 @@ class ControllerSwitcher:
         for arm in ['r', 'l']:
             if LOADED_CTRLS_PARAMS[arm] not in rosparam.list_params(""):
                 possible_ctrls = []
-                for ctrl in POSSIBLE_ARM_CONTROLLERS:
+                for ctrl in LOADED_ARM_CONTROLLERS:
                     possible_ctrls.append(ctrl % arm)
                 rosparam.set_param_raw(LOADED_CTRLS_PARAMS[arm], possible_ctrls)
         rospy.loginfo("[pr2_controller_switcher] ControllerSwitcher ready.")
