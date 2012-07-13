@@ -176,7 +176,10 @@ class TrajPlayback(object):
 
 def load_arm_file(filename):
     try:
-        f = file(roslaunch.substitution_args.resolve_args(filename), "r")
+        directory = rospy.get_param("~traj_directory", "")
+        if directory[-1] != '/':
+            directory = directory + "/"
+        f = file(roslaunch.substitution_args.resolve_args(directory + filename), "r")
         traj, arm_char, rate = pickle.load(f)
         if arm_char not in ['r', 'l']:
             raise Exception("arm_char not r or l")
@@ -299,7 +302,9 @@ class TrajectoryServer(object):
         self.feedback_pub.publish(msg)
 
     def traj_play_cb(self, goal):
+        print "SUPPPP"
         traj, arm_char, rate = load_arm_file(goal.filepath)
+        print traj, "HHHHHHHHHIIIIIIIIIIIIIIII!!!!!", goal.filepath
         if traj is None:
             self.traj_srv.set_aborted(text="Failed to open file.")
             return
