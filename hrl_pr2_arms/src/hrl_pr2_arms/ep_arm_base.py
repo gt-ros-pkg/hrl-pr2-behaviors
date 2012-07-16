@@ -145,12 +145,9 @@ class EPArmBase(JointKinematics):
             self.ep_time = rospy.get_time()
             self.ep = ep
 
-def create_ep_arm(arm_side, arm_type=EPArmBase, base_link="torso_lift_link",  
-                  end_link="%s_gripper_tool_frame", urdf_filename=None,
-                  controller_name=None, timeout=5.):
+def create_ep_arm(arm_side, arm_type=EPArmBase, urdf_filename=None, **args):
     if urdf_filename is None:
         robot = URDF.load_from_parameter_server(verbose=False)
     else:
         robot = URDF.load_xml_file(urdf_filename, verbose=False)
-    return arm_type(arm_side, robot, base_link=base_link, end_link=end_link,
-                    controller_name=controller_name, timeout=timeout)
+    return arm_type(arm_side, robot, **args)
