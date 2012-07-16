@@ -162,8 +162,8 @@ class PR2ARServo(object):
         self.base_pub.publish(Twist())
 
     def find_ar_tag(self, timeout=None):
-        rate = 15.
-        ar_2d_q_len = 10
+        rate = 8.
+        ar_2d_q_len = 4
         sigma_thresh = [0.05, 0.01, 0.08]
         no_mean_thresh = 0.5
         r = rospy.Rate(rate)
@@ -218,7 +218,7 @@ class PR2ARServo(object):
         #######################
 
         goal_ar_pose = homo_mat_from_2d(*pose_goal)
-        rate = 15.
+        rate = 8.
         kf_x = ServoKalmanFilter(delta_t=1./rate)
         kf_y = ServoKalmanFilter(delta_t=1./rate)
         kf_r = ServoKalmanFilter(delta_t=1./rate)
