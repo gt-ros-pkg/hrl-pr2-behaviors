@@ -18,3 +18,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 rosbuild_add_executable(ar_confirm src/ar_confirm.cpp)
 rosbuild_add_executable(ar_servo_image_proc src/ar_servo_image_proc.cpp)
+
+rosbuild_find_ros_package(dynamic_reconfigure)
+include(${dynamic_reconfigure_PACKAGE_PATH}/cmake/cfgbuild.cmake)
+gencfg()
