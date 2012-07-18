@@ -171,19 +171,14 @@ class FindARTagState(smach.State):
     def execute(self, userdata):
         # This is just a mess.
         # Figure this out and rewrite it...
-        def check_preempt(event):
-            if self.preempt_requested():
-                self.service_preempt()
-                for topic in self.viz_servos:
-                    self.viz_servos[topic].request_preempt()
-                
-        preempt_timer = rospy.Timer(rospy.Duration(0.1), check_preempt)
+        self.service_preempt()
+
         self.outcome_dict = {}
         def call_find_ar_tag(te, viz_servo, fart_state, topic):
             mean_ar, outcome = viz_servo.find_ar_tag(self.timeout)
-            self.outcome_dict[topic] = (mean_ar, outcome)
+            fart_state.outcome_dict[topic] = (mean_ar, outcome)
             if outcome == "found_tag":
-                self.request_preempt()
+                fart_state.request_preempt()
         for topic in self.viz_servos:
             call_find_ar_tag_filled = functools.partial(call_find_ar_tag, 
                                                         viz_servo=self.viz_servos[topic],
@@ -209,7 +204,6 @@ class FindARTagState(smach.State):
                 ##################################################
                 break
             
-        preempt_timer.shutdown()
         return outcome
 
 class ServoARTagState(smach.State):

@@ -170,6 +170,7 @@ class PR2ARServo(object):
         ar_2d_queue = deque()
         new_obs_queue = deque()
         start_time = rospy.get_time()
+        self.preempt_requested = False
         while True:
             if timeout is not None and rospy.get_time() - start_time > timeout:
                 rospy.logwarn("[pr2_viz_servo] find_ar_tag timed out, current ar_sigma: " + 
@@ -233,6 +234,7 @@ class PR2ARServo(object):
         pid_y = PIDController(k_p=0.5, rate=rate, saturation=0.05)
         pid_r = PIDController(k_p=0.5, rate=rate, saturation=0.08)
         r = rospy.Rate(rate)
+        self.preempt_requested = False
         while True:
             if rospy.is_shutdown():
                 self.base_pub.publish(Twist())
