@@ -10,7 +10,6 @@
   <url>http://ros.org/wiki/hrl_pr2_behaviors</url>
   <version>0.1.0</version>
   <depend stack="ros" />
-  <depend stack="rospy" />
   <depend stack="hrl_kdl" />
 
 </stack>
