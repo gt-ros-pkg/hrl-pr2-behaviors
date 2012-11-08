@@ -43,6 +43,7 @@ class TrajPlayback(object):
         self.running = False
         self.is_paused = False
         self.ctrl_switcher = ControllerSwitcher()
+        rospy.loginfo('[trajectory_playback] Started Traj Playback for %s arm with %s controller.' %(self.arm_char, self.ctrl_name))
 
     ##
     # Switches controllers and returns an instance of the arm to control
@@ -356,9 +357,9 @@ def main():
     p.add_option('-t', '--traj_mode', dest="traj_mode",
                  action="store_true", default=False,
                  help="Trajectory mode.")
-    p.add_option('-c', '--ctrl_name', dest="ctrl_name", default=CTRL_NAME_LOW,
+    p.add_option('-c', '--ctrl_name', dest="ctrl_name", default=None, #CTRL_NAME_LOW,
                  help="Controller to run the playback with.")
-    p.add_option('-p', '--params', dest="param_file", default=PARAM_FILE_LOW,
+    p.add_option('-p', '--params', dest="param_file", default=None, #PARAM_FILE_LOW,
                  help="YAML file to save parameters in or load from.")
     p.add_option('-v', '--srv_mode', dest="srv_mode", 
                  action="store_true", default=False,

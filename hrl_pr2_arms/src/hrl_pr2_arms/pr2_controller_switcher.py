@@ -100,7 +100,7 @@ class ControllerSwitcher:
                 if resp.state[i] == 'running':
                     if not reset:
                         rospy.loginfo("[pr2_controller_switcher] Specified controller is already running.")
-                        return False
+                        return True
                     self.switch_controller_srv([], [new_ctrl], 1)
                 self.unload_controller(new_ctrl)
                 
