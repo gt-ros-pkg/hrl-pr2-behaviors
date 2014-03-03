@@ -1,0 +1,18 @@
+<package>
+  <description brief="ar_tool_grasp">
+
+     ar_tool_grasp
+
+  </description>
+  <author>pgrice</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/ar_tool_grasp</url>
+  <depend package="rospy"/>
+  <depend package="ar_track_alvar"/>
+  <depend package="actionlib"/>
+  <depend package="geometry_msgs"/>
+
+</package>
+
+
