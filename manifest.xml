@@ -11,6 +11,7 @@
   <depend package="rospy"/>
   <depend package="ar_track_alvar"/>
   <depend package="actionlib"/>
+  <depend package="actionlib_msgs"/>
   <depend package="geometry_msgs"/>
 
 </package>

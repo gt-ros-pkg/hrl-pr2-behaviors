@@ -1,0 +1,6 @@
+int8 tag_id
+---
+bool progressing
+---
+bool succeeded
+geometry_msgs/PoseStamped final_pose
