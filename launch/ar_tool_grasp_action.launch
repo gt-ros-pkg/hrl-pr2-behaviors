@@ -1,0 +1,5 @@
+<launch>
+  <node name="ar_tool_grasp_action_server" pkg="ar_tool_grasp" type="ar_grasp_action.py" 
+        args="-s 0.0 0.0 0.12 0.0 90.0 0.0 -g 0.0 0.0 -0.02 0.0 90.0 0.0 -t 10.0 -w 1.0" 
+        output="screen"/>
+</launch>

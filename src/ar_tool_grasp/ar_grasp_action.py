@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+import sys
+
 from collections import deque
 from copy import copy
 import numpy as np
@@ -11,7 +13,7 @@ from geometry_msgs.msg import PoseStamped, Point, Quaternion
 from pr2_controllers_msgs.msg import Pr2GripperCommandAction, Pr2GripperCommandGoal
 from tf import transformations as tft
 
-from ar_track_alvar.msg import AlvarMarker
+from ar_track_alvar.msg import AlvarMarkers
 
 from ar_tool_grasp.msg import ARToolGraspAction
 
@@ -29,6 +31,8 @@ class ARTagGraspAction(object):
         self.gripper_pose_sub = rospy.Subscriber('haptic_mpc/gripper_pose', PoseStamped, self.pose_cb)
 
         self.tag_poses = {}
+        self.tag_sub = rospy.Subscriber('ar_pose_marker', AlvarMarkers, self.tag_pose_cb)
+
         self.goal_pose_pub = rospy.Publisher('haptic_mpc/goal_pose', PoseStamped)
         self.gripper_ac = actionlib.SimpleActionClient('l_gripper_controller/gripper_action', Pr2GripperCommandAction)
         rospy.loginfo("[%s] Waiting for gripper action server" %(rospy.get_name()))
@@ -45,14 +49,14 @@ class ARTagGraspAction(object):
 
     def clear_old_poses(self, pose_deque):
         now = rospy.Time.now()
-        age = now - pose_deque[0]
+        age = now - pose_deque[0].header.stamp
         while age > self.tag_pose_window:
-            pose_deque[marker.id].popleft()
-            age = now - pose_deque[marker.id][0]
+            pose_deque.popleft()
+            age = now - pose_deque[0].header.stamp
         return pose_deque
 
-    def tag_pose_cb(self, marker_msg):
-        for marker in marker_msg.markers:
+    def tag_pose_cb(self, markers_msg):
+        for marker in markers_msg.markers:
             if not marker.id in self.tag_poses:
                 pose = copy(marker.pose)
                 pose.header = copy(marker.header)
@@ -73,7 +77,7 @@ class ARTagGraspAction(object):
            x = y = z = qx = qy = qz = qw = 0
            frame = self.tag_poses[tag_id][0].header.frame_id
            for ps in self.tag_poses[tag_id]:
-               if not(frame_id == ps.header.frame_id):
+               if not(frame == ps.header.frame_id):
                    rospy.logerr("[%s] Frame Id's of stored poses for tag id %d do not match." %(rospy.get_name(), tag_id))
                    return None
                x += ps.pose.position.x
@@ -112,9 +116,10 @@ class ARTagGraspAction(object):
         tag_mat = tft.compose_matrix(angles=tag_rpy, translate=tag_xyz)
         new_mat = tag_mat * tf_mat
         new_xyz = new_mat[:3,3]
-        new_q = tft.quaternion_from_matrix(new_mat[:3,:3])
+        print new_mat
+        new_q = tft.quaternion_from_matrix(new_mat)
         grasp_pose = PoseStamped()
-        grasp_pose.header.frame_id = tag_pose.frame_id
+        grasp_pose.header.frame_id = tag_pose.header.frame_id
         grasp_pose.pose.position = Point(*new_xyz)
         grasp_pose.pose.orientation = Quaternion(*new_q)
         return grasp_pose
@@ -133,9 +138,9 @@ class ARTagGraspAction(object):
         tag_mat = tft.compose_matrix(angles=tag_rpy, translate=tag_xyz)
         new_mat = tag_mat * tf_mat
         new_xyz = new_mat[:3,3]
-        new_q = tft.quaternion_from_matrix(new_mat[:3,:3])
+        new_q = tft.quaternion_from_matrix(new_mat)
         setup_pose = PoseStamped()
-        setup_pose.header.frame_id = tag_pose.frame_id
+        setup_pose.header.frame_id = tag_pose.header.frame_id
         setup_pose.pose.position = Point(*new_xyz)
         setup_pose.pose.orientation = Quaternion(*new_q)
         return setup_pose
@@ -143,13 +148,13 @@ class ARTagGraspAction(object):
     def open_gripper(self, dist=0.09, effort=-1):
         gripper_goal = Pr2GripperCommandGoal()
         gripper_goal.command.position = dist
-        gripper_goal.command.effort = effort
+        gripper_goal.command.max_effort = effort
         self.gripper_ac.send_goal(gripper_goal)
 
     def close_gripper(self, dist=0.0, effort=-1):
         gripper_goal = Pr2GripperCommandGoal()
         gripper_goal.command.position = dist
-        gripper_goal.command.effort = effort
+        gripper_goal.command.max_effort = effort
         self.gripper_ac.send_goal(gripper_goal)
 
     def get_pose_error(self, goal_pose, curr_pose):
@@ -170,7 +175,7 @@ class ARTagGraspAction(object):
         dq = tft.quaternion_multiply(cq_inv, goal_q)
         #theta = 2*arctan2( ||X||, w)
         q_vec_norm = np.linalg.norm(dq[:3])
-        rot_err = 2*np.atan2(q_vec_norm, dq[3])
+        rot_err = 2*np.arctan2(q_vec_norm, dq[3])
         return pos_err, rot_err
 
     def progressing(self):
@@ -196,6 +201,7 @@ class ARTagGraspAction(object):
             return
         rospy.loginfo("[%s] Grasping tag id: %d" %(rospy.get_name(), tag_id))
         self.goal_pose = self.setup_from_tag_pose(tag_pose)
+        print "Goal Pose", self.goal_pose
         self.open_gripper()
         self.goal_pose_pub.publish(self.goal_pose)
         self.pos_err, self.ort_err = self.get_pose_error(self.goal_pose, self.gripper_pose)
@@ -212,7 +218,7 @@ class ARTagGraspAction(object):
 
         goal_pose = self.goal_from_tag_pose(tag_pose)
         self.goal_pose_pub.publish(goal_pose)
-        self.pos_err, self.ort_err = self.get_pose_error(setup_pose, self.gripper_pose)
+        self.pos_err, self.ort_err = self.get_pose_error(self.goal_pose, self.gripper_pose)
         while (self.pos_err > 0.01) and (self.ort_err > np.pi/18):
             if self.progressing():
                 self.action_server.publish_feedback(True)
@@ -231,18 +237,18 @@ if __name__=='__main__':
     import argparse
     parser = argparse.ArgumentParser(description="A node for grasping a tool handle marked with an AR Tag",
                                      formatter_class = argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('-s','--setup-transform', action='store', nargs=6, default=[0]*6,
+    parser.add_argument('-s','--setup-transform', action='store', nargs=6, type=float, default=[0.]*6,
                         help="Setup Transform: A pose (x,y,z,r,p,y) relative to the tag face which should be used as an approach position.")
-    parser.add_argument('-g','--grasp-transform', action='store', nargs=6, default=[0]*6,
+    parser.add_argument('-g','--grasp-transform', action='store', nargs=6, type=float, default=[0.]*6,
                         help="Grasp Transform: A pose (x,y,z,r,p,y) relative to the tag face which should be used as the grasping location.")
-    parser.add_argument('-t', '--timeout', action="store", default=5.0,
-                        help="Duration in seconds to wait for 5\% improvement in error before declaring failure.")
-    parser.add_argument('-w', '--smoothing-window', action="store", default=1.0,
+    parser.add_argument('-t', '--timeout', action="store", type=float, default=5.0,
+                        help="Duration in seconds to wait for 5 percent improvement in error before declaring failure.")
+    parser.add_argument('-w', '--window', action="store", type=float, default=1.0,
                         help="Duration in seconds of windowed average of tag pose.")
-    args = parser.parse_args()
+    args = parser.parse_known_args()[0]
 
     rospy.init_node('ar_tag_grasp_action')
-    grasp_action = ARTagGraspAction(tag_pose_window=args.smoothing_window,
+    grasp_action = ARTagGraspAction(tag_pose_window=args.window,
                                     progress_timeout=args.timeout,
                                     setup_transform=args.setup_transform,
                                     grasp_transform=args.grasp_transform)
