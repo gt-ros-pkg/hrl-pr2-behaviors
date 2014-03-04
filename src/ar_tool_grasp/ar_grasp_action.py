@@ -15,7 +15,7 @@ from tf import transformations as tft
 
 from ar_track_alvar.msg import AlvarMarkers
 
-from ar_tool_grasp.msg import ARToolGraspAction
+from ar_tool_grasp.msg import ARToolGraspAction, ARToolGraspFeedback, ARToolGraspResult
 
 class ARTagGraspAction(object):
     def __init__(self, tag_pose_window=1.0, progress_timeout=5.,
@@ -23,7 +23,7 @@ class ARTagGraspAction(object):
         #TODO: GET ALL THE MAGIC NUMBERS INTO PARAMETERS
         #TODO: Collect all magic strings into parameters
         self.tag_pose_window = rospy.Duration(tag_pose_window)
-        self.progress_timeout = progress_timeout
+        self.progress_timeout = rospy.Duration(progress_timeout)
         self.setup_transform = setup_transform if setup_transform is not None else [0]*6
         self.grasp_transform = grasp_transform if grasp_transform is not None else [0]*6
 
@@ -34,6 +34,10 @@ class ARTagGraspAction(object):
         self.tag_sub = rospy.Subscriber('ar_pose_marker', AlvarMarkers, self.tag_pose_cb)
 
         self.goal_pose_pub = rospy.Publisher('haptic_mpc/goal_pose', PoseStamped)
+        self.test_pub_1 = rospy.Publisher('test_pose_1', PoseStamped, latch=True)
+        self.test_pub_2 = rospy.Publisher('test_pose_2', PoseStamped, latch=True)
+        self.last_pos_err = self.last_ort_err = np.inf
+        self.last_progress_time = rospy.Time.now()
         self.gripper_ac = actionlib.SimpleActionClient('l_gripper_controller/gripper_action', Pr2GripperCommandAction)
         rospy.loginfo("[%s] Waiting for gripper action server" %(rospy.get_name()))
         if self.gripper_ac.wait_for_server(rospy.Duration(10.0)):
@@ -114,7 +118,7 @@ class ARTagGraspAction(object):
                     tag_pose.pose.orientation.w)
         tag_rpy = tft.euler_from_quaternion(tag_quat)
         tag_mat = tft.compose_matrix(angles=tag_rpy, translate=tag_xyz)
-        new_mat = tag_mat * tf_mat
+        new_mat = tf_mat * tag_mat
         new_xyz = new_mat[:3,3]
         print new_mat
         new_q = tft.quaternion_from_matrix(new_mat)
@@ -122,6 +126,7 @@ class ARTagGraspAction(object):
         grasp_pose.header.frame_id = tag_pose.header.frame_id
         grasp_pose.pose.position = Point(*new_xyz)
         grasp_pose.pose.orientation = Quaternion(*new_q)
+        self.test_pub_2.publish(grasp_pose)
         return grasp_pose
 
     def setup_from_tag_pose(self, tag_pose):
@@ -136,13 +141,14 @@ class ARTagGraspAction(object):
                     tag_pose.pose.orientation.w)
         tag_rpy = tft.euler_from_quaternion(tag_quat)
         tag_mat = tft.compose_matrix(angles=tag_rpy, translate=tag_xyz)
-        new_mat = tag_mat * tf_mat
+        new_mat = tf_mat * tag_mat
         new_xyz = new_mat[:3,3]
         new_q = tft.quaternion_from_matrix(new_mat)
         setup_pose = PoseStamped()
         setup_pose.header.frame_id = tag_pose.header.frame_id
         setup_pose.pose.position = Point(*new_xyz)
         setup_pose.pose.orientation = Quaternion(*new_q)
+        self.test_pub_1.publish(setup_pose)
         return setup_pose
 
     def open_gripper(self, dist=0.09, effort=-1):
@@ -179,14 +185,14 @@ class ARTagGraspAction(object):
         return pos_err, rot_err
 
     def progressing(self):
-        pos_err, ort_err = self.get_pose_error(self.goal_pose, self.gripper_pose)
+        self.pos_err, self.ort_err = self.get_pose_error(self.goal_pose, self.gripper_pose)
         now = rospy.Time.now()
         if self.pos_err <= 0.9 * self.last_pos_err:
-            self.last_pos_err = pos_err
+            self.last_pos_err = self.pos_err
             self.last_progress_time = now
             return True
         if self.ort_err <= 0.9 * self.last_ort_err:
-            self.last_ort_err = ort_err
+            self.last_ort_err = self.ort_err
             self.last_progress_time = now
             return True
         if now - self.last_progress_time > self.progress_timeout:
@@ -194,6 +200,10 @@ class ARTagGraspAction(object):
         return True
 
     def grasp_cb(self, grasp_goal):
+        self.action_server.accept_new_goal()
+        if self.action_server.is_preempt_requested():
+            self.action_server.set_aborted(None, "Preempt requested")
+            return
         tag_id = grasp_goal.tag_id
         tag_pose = self.get_current_tag_pose(grasp_goal.tag_id)
         if tag_pose is None:
@@ -201,37 +211,42 @@ class ARTagGraspAction(object):
             return
         rospy.loginfo("[%s] Grasping tag id: %d" %(rospy.get_name(), tag_id))
         self.goal_pose = self.setup_from_tag_pose(tag_pose)
-        print "Goal Pose", self.goal_pose
         self.open_gripper()
         self.goal_pose_pub.publish(self.goal_pose)
         self.pos_err, self.ort_err = self.get_pose_error(self.goal_pose, self.gripper_pose)
         while (self.pos_err > 0.03) and (self.ort_err > np.pi/12):
             if self.progressing():
-                self.action_server.publish_feedback(True)
+                fdbk = ARToolGraspFeedback()
+                fdbk.progressing = True
+                self.action_server.publish_feedback(fdbk)
                 rospy.sleep(0.5)
-
             else:
-                self.set_aborted(None, "Not progressing toward goal...")
+                self.action_server.set_aborted(None, "Not progressing toward goal...")
         result = self.gripper_ac.get_result()
         if not result.position > 0.08:
-            self.fail("Gripper Not Open")
+            self.action_server.set_aborted(None, "Gripper Not Open")
 
         goal_pose = self.goal_from_tag_pose(tag_pose)
         self.goal_pose_pub.publish(goal_pose)
         self.pos_err, self.ort_err = self.get_pose_error(self.goal_pose, self.gripper_pose)
         while (self.pos_err > 0.01) and (self.ort_err > np.pi/18):
             if self.progressing():
-                self.action_server.publish_feedback(True)
+                fdbk = ARToolGraspFeedback()
+                fdbk.progressing = True
+                self.action_server.publish_feedback(fdbk)
                 rospy.sleep(0.5)
             else:
-                self.set_aborted(None, "Not progressing toward goal...")
+                self.action_server.set_aborted(None, "Not progressing toward goal...")
         self.close_gripper(dist=0.010)
         closed = self.gripper_ac.wait_for_result(15.0)
         if not closed:
-            self.set_aborted(None, "Couldn't close gripper")
+            self.action_server.set_aborted(None, "Couldn't close gripper")
         result = self.gripper_ac.get_result()
         if (0.035 > result.position > 0.02):
-            self.action_server.set_succeeded(self, result, text=msg)
+            result = ARToolGraspResult()
+            result.succeeded = True
+            result.final_pose = copy(self.gripper_pose)
+            self.action_server.set_succeeded(self, result, text="")
 
 if __name__=='__main__':
     import argparse
@@ -248,10 +263,12 @@ if __name__=='__main__':
     args = parser.parse_known_args()[0]
 
     rospy.init_node('ar_tag_grasp_action')
+    setup_transform = np.radians(args.setup_transform)
+    grasp_transform = np.radians(args.grasp_transform)
     grasp_action = ARTagGraspAction(tag_pose_window=args.window,
                                     progress_timeout=args.timeout,
-                                    setup_transform=args.setup_transform,
-                                    grasp_transform=args.grasp_transform)
+                                    setup_transform=setup_transform,
+                                    grasp_transform=grasp_transform)
     rospy.spin()
 
 
