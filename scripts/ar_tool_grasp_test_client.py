@@ -29,7 +29,6 @@ class ARToolGraspTestClient(object):
         else:
             rospy.logwarn("[%s] Grasp of Tool %d Failed!" %(rospy.get_name(), tag_id))
 
-
 if __name__=='__main__':
     rospy.init_node('ar_tool_grasp_test_client')
     test_client = ARToolGraspTestClient()

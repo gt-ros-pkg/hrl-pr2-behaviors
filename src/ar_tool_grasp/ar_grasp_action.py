@@ -107,47 +107,46 @@ class ARTagGraspAction(object):
            return ps
 
     def goal_from_tag_pose(self, tag_pose):
-        tf_mat = tft.compose_matrix(angles=self.grasp_transform[3:],
-                                    translate=self.grasp_transform[:3])
-        tag_xyz = (tag_pose.pose.position.x,
-                   tag_pose.pose.position.y,
-                   tag_pose.pose.position.z)
-        tag_quat = (tag_pose.pose.orientation.x,
-                    tag_pose.pose.orientation.y,
-                    tag_pose.pose.orientation.z,
-                    tag_pose.pose.orientation.w)
-        tag_rpy = tft.euler_from_quaternion(tag_quat)
-        tag_mat = tft.compose_matrix(angles=tag_rpy, translate=tag_xyz)
-        new_mat = tf_mat * tag_mat
-        new_xyz = new_mat[:3,3]
-        print new_mat
+        tf_mat = tft.compose_matrix(angles=self.grasp_transform[3:])
+        tag_q = (tag_pose.pose.orientation.x, tag_pose.pose.orientation.y,
+                    tag_pose.pose.orientation.z, tag_pose.pose.orientation.w)
+        tag_mat = tft.quaternion_matrix(tag_q)
+        new_mat = np.dot(tag_mat, tf_mat)
+        dxyz = self.grasp_transform[:3]
+        dxyz.append(1)
+        d_xyz_base = np.matrix(dxyz).T
+        d_xyz_tag = np.dot(tag_mat, d_xyz_base).A1[:3].tolist()
         new_q = tft.quaternion_from_matrix(new_mat)
         grasp_pose = PoseStamped()
+        grasp_pose.header.stamp = rospy.Time.now()
         grasp_pose.header.frame_id = tag_pose.header.frame_id
-        grasp_pose.pose.position = Point(*new_xyz)
+        grasp_pose.pose.position.x = tag_pose.pose.position.x + d_xyz_tag[0]
+        grasp_pose.pose.position.y = tag_pose.pose.position.y + d_xyz_tag[1]
+        grasp_pose.pose.position.z = tag_pose.pose.position.z + d_xyz_tag[2]
         grasp_pose.pose.orientation = Quaternion(*new_q)
         self.test_pub_2.publish(grasp_pose)
         return grasp_pose
 
     def setup_from_tag_pose(self, tag_pose):
-        tf_mat = tft.compose_matrix(angles=self.setup_transform[3:],
-                                    translate=self.setup_transform[:3])
-        tag_xyz = (tag_pose.pose.position.x,
-                   tag_pose.pose.position.y,
-                   tag_pose.pose.position.z)
-        tag_quat = (tag_pose.pose.orientation.x,
-                    tag_pose.pose.orientation.y,
-                    tag_pose.pose.orientation.z,
-                    tag_pose.pose.orientation.w)
-        tag_rpy = tft.euler_from_quaternion(tag_quat)
-        tag_mat = tft.compose_matrix(angles=tag_rpy, translate=tag_xyz)
-        new_mat = tf_mat * tag_mat
-        new_xyz = new_mat[:3,3]
+        print tag_pose
+        tf_mat = tft.compose_matrix(angles=self.setup_transform[3:])
+        tag_q = (tag_pose.pose.orientation.x, tag_pose.pose.orientation.y,
+                 tag_pose.pose.orientation.z, tag_pose.pose.orientation.w)
+        tag_mat = tft.quaternion_matrix(tag_q)
+        new_mat = np.dot(tag_mat, tf_mat)
+        dxyz = self.setup_transform[:3]
+        dxyz.append(1)
+        d_xyz_base = np.matrix(dxyz).T
+        d_xyz_tag = np.dot(tag_mat, d_xyz_base).A1[:3].tolist()
         new_q = tft.quaternion_from_matrix(new_mat)
         setup_pose = PoseStamped()
+        setup_pose.header.stamp = rospy.Time.now()
         setup_pose.header.frame_id = tag_pose.header.frame_id
-        setup_pose.pose.position = Point(*new_xyz)
+        setup_pose.pose.position.x = tag_pose.pose.position.x + d_xyz_tag[0]
+        setup_pose.pose.position.y = tag_pose.pose.position.y + d_xyz_tag[1]
+        setup_pose.pose.position.z = tag_pose.pose.position.z + d_xyz_tag[2]
         setup_pose.pose.orientation = Quaternion(*new_q)
+        print setup_pose
         self.test_pub_1.publish(setup_pose)
         return setup_pose
 
@@ -200,31 +199,44 @@ class ARTagGraspAction(object):
         return True
 
     def grasp_cb(self, grasp_goal):
-        self.action_server.accept_new_goal()
-        if self.action_server.is_preempt_requested():
-            self.action_server.set_aborted(None, "Preempt requested")
-            return
         tag_id = grasp_goal.tag_id
         tag_pose = self.get_current_tag_pose(grasp_goal.tag_id)
+        result = ARToolGraspResult()
+        result.succeeded = False
         if tag_pose is None:
-            self.action_server.set_aborted(None, "Tag not Seen")
+            result.final_pose = copy(self.gripper_pose)
+            msg = "[%s] Failed to grasp tag id %d: Location of tag unknown." %(rospy.get_name(), tag_id)
+            rospy.loginfo(msg)
+            self.action_server.set_aborted(result, msg)
             return
         rospy.loginfo("[%s] Grasping tag id: %d" %(rospy.get_name(), tag_id))
         self.goal_pose = self.setup_from_tag_pose(tag_pose)
         self.open_gripper()
         self.goal_pose_pub.publish(self.goal_pose)
         self.pos_err, self.ort_err = self.get_pose_error(self.goal_pose, self.gripper_pose)
-        while (self.pos_err > 0.03) and (self.ort_err > np.pi/12):
+        while (self.pos_err > 0.03) and (self.ort_err > np.pi/18):
+            print "Pos err: ", self.pos_err
+            print "Ort Err: ", self.ort_err
             if self.progressing():
                 fdbk = ARToolGraspFeedback()
                 fdbk.progressing = True
                 self.action_server.publish_feedback(fdbk)
                 rospy.sleep(0.5)
+                print "Approaching setup"
             else:
-                self.action_server.set_aborted(None, "Not progressing toward goal...")
-        result = self.gripper_ac.get_result()
-        if not result.position > 0.08:
-            self.action_server.set_aborted(None, "Gripper Not Open")
+                result.final_pose = copy(self.gripper_pose)
+                msg = "[%s] Failed to grasp tag id %d: Could not reach setup pose." %(rospy.get_name(), tag_id)
+                rospy.loginfo(msg)
+                self.action_server.set_aborted(result, msg)
+                return
+        print "Reached setup"
+        gripper_result = self.gripper_ac.get_result()
+        if not gripper_result.position > 0.08:
+            result.final_pose = copy(self.gripper_pose)
+            msg = "[%s] Failed to grasp tag id %d: Could not open gripper." %(rospy.get_name(), tag_id)
+            rospy.loginfo(msg)
+            self.action_server.set_aborted(result, msg)
+            return
 
         goal_pose = self.goal_from_tag_pose(tag_pose)
         self.goal_pose_pub.publish(goal_pose)
@@ -235,18 +247,30 @@ class ARTagGraspAction(object):
                 fdbk.progressing = True
                 self.action_server.publish_feedback(fdbk)
                 rospy.sleep(0.5)
+                print "Approaching grasp"
             else:
-                self.action_server.set_aborted(None, "Not progressing toward goal...")
+                result.final_pose = copy(self.gripper_pose)
+                msg = "[%s] Failed to grasp tag id %d: Could not reach grasp pose." %(rospy.get_name(), tag_id)
+                rospy.loginfo(msg)
+                self.action_server.set_aborted(result, msg)
+                return
+        print "Reached Grasp"
         self.close_gripper(dist=0.010)
-        closed = self.gripper_ac.wait_for_result(15.0)
+        closed = self.gripper_ac.wait_for_result(rospy.Duration(15.0))
         if not closed:
-            self.action_server.set_aborted(None, "Couldn't close gripper")
+            result.final_pose = copy(self.gripper_pose)
+            msg = "[%s] Failed to grasp tag id %d: Could not close gripper." %(rospy.get_name(), tag_id)
+            rospy.loginfo(msg)
+            self.action_server.set_aborted(result, msg)
+            return
         result = self.gripper_ac.get_result()
         if (0.035 > result.position > 0.02):
             result = ARToolGraspResult()
             result.succeeded = True
             result.final_pose = copy(self.gripper_pose)
-            self.action_server.set_succeeded(self, result, text="")
+            msg = "[%s] Succeeded in grasping tag %d" %(rospy.get_name(), tag_id)
+            rospy.loginfo(msg)
+            self.action_server.set_succeeded(result, text=msg)
 
 if __name__=='__main__':
     import argparse
@@ -263,12 +287,12 @@ if __name__=='__main__':
     args = parser.parse_known_args()[0]
 
     rospy.init_node('ar_tag_grasp_action')
-    setup_transform = np.radians(args.setup_transform)
-    grasp_transform = np.radians(args.grasp_transform)
+    args.setup_transform[3:] = np.radians(args.setup_transform[3:])
+    args.grasp_transform[3:] = np.radians(args.grasp_transform[3:])
     grasp_action = ARTagGraspAction(tag_pose_window=args.window,
                                     progress_timeout=args.timeout,
-                                    setup_transform=setup_transform,
-                                    grasp_transform=grasp_transform)
+                                    setup_transform=args.setup_transform,
+                                    grasp_transform=args.grasp_transform)
     rospy.spin()
 
 
