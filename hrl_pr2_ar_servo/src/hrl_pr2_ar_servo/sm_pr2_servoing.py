@@ -14,10 +14,13 @@ import smach
 import smach_ros
 from std_msgs.msg import Bool, Int8, String
 from geometry_msgs.msg import PoseStamped
+from tf import transformations as tft
 
 from pykdl_utils.joint_kinematics import create_joint_kin
 #from costmap_services.python_client import CostmapServices
 from pr2_ar_servo import PR2ARServo
+
+from hrl_pr2_ar_servo.msg import ARServoGoalData
 
 OUTCOMES_SPA = ['succeeded','preempted','aborted']
 
@@ -90,47 +93,6 @@ class ArmCollisionDetection(smach.State):
 #            r.sleep()
 #        return 'aborted'
 
-def build_cc_servoing(track_tag_timeout):
-    """ Create a Smach Concurrence Container.
-        Fill with states for servoing, detecting collision, and processing user preemption.
-    """
-    def term_cb(outcome_map):
-        return True
-
-    def out_cb(outcome_map):
-        if outcome_map['ARM_COLLISION_DETECTION'] == 'collision':
-            return 'arm_collision'
-        #if outcome_map['LASER_COLLISION_DETECTION'] == 'collision':
-        #    return 'laser_collision'
-        if outcome_map['USER_PREEMPT_DETECTION'] == 'true':
-            return 'user_preempted'
-        if outcome_map['USER_PREEMPT_DETECTION'] == 'false':
-            return 'aborted'
-        return outcome_map['SERVOING']
-
-    cc_servoing = smach.Concurrence(
-                            outcomes=OUTCOMES_SPA+
-                            ['arm_collision', 'laser_collision', 'lost_tag', 'user_preempted'],
-                            input_keys=['goal_ar_pose', 'initial_ar_pose', 'servo_topic'],
-                            default_outcome='aborted',
-                            child_termination_cb=term_cb,
-                            outcome_cb=out_cb)
-
-    with cc_servoing:
-        smach.Concurrence.add('SERVOING',
-                              ServoARTagState())
-
-        smach.Concurrence.add('ARM_COLLISION_DETECTION',
-                              ArmCollisionDetection())
-
-        #smach.Concurrence.add('LASER_COLLISION_DETECTION',
-        #                      LaserCollisionDetection())
-
-        smach.Concurrence.add('USER_PREEMPT_DETECTION',
-                              BoolTopicState("/pr2_ar_servo/preempt"))
-
-    return cc_servoing
-
 class BoolTopicState(smach.State):
     def __init__(self, topic, rate=20):
         smach.State.__init__(self, outcomes=['true', 'false', 'preempted', 'aborted'])
@@ -166,148 +128,37 @@ class PublishState(smach.State):
         self.pub.publish(self.msg)
         return 'succeeded'
 
-class WaitForTagGoalState(smach.State):
-    """ A Smach State that waits for a msg.
-        Msg should contain the goal location, tag id(if any), and camera topic for AR Servoing.
-    """
-    def __init__(self):
-        smach.State.__init__(self, outcomes=OUTCOMES_SPA,
-                                   output_keys=["base_goal", "tag_topic"])
-        self.lock = threading.Lock()
-        self.servo_camera_topic = None
-        self.tag_id = None
-        self.base_pose_goal = None
-        self.tag_goal_sub = rospy.Subscriber("ar_servo_goal_data", ARServoGoalData, self.goal_data_cb)
-
-    def goal_data_cb(self, msg):
-        """ Grab goal data from msg."""
-        with self.lock:
-            self.tag_id = msg.tag_id
-            self.base_pose_goal = msg.base_pose_goal
-            self.servo_camera_topic = msg.camera_topic
-
-    def pose_to_2d(self, ps):
-        """ Extract X, Y, Theta from a pose stamped msg."""
-        q = (ps.pose.orientation.x, ps.pose.orientation.y,
-             ps.pose.orientation.z, ps.pose.orientation.w)
-        rot = tft.euler_from_quaternion(q)[2]
-        return ps.pose.position.x, ps.pose.position.y, rot
-
-    def execute(self, userdata):
-       """ While waiting, check if goal is received.
-           If received, place data in userdata and return success.
-       """
-        #TODO: Build in correctness checking to validate good goals
-        rate = rospy.Rate(10)
-        while (not rospy.is_shutdown()) and
-              ((self.tag_id is None) or
-               (self.base_pose_goal is None) or
-               (self.servo_camera_topic is None)):
-               if self.preempt_requested():
-                   self.service_preempt()
-                   return "preempted"
-              rate.sleep()
-
-        if rospy.is_shutdown():
-            return "aborted"
-
-        with self.lock:
-            #Check for values, grap if all present
-            base_goal_ps = copy.copy(self.base_pose_goal)
-            tag_topic = copy.copy(self.servo_camera_topic)
-            tag_id = copy.copy(self.tag_id)
-            #Reset state for new data
-            self.base_pose_goal = None
-            self.tag_id = None
-            self.servo_camera_topic = None
-
-        base_goal = self.pose_to_2d(base_goal_ps) #Convert to 3-tuple base goal
-        userdata["base_goal"] = base_goal
-        userdata["tag_topic"] = tag_topic
-        userdata["tag_id"] = tag_id
-        return "succeeded"
-
 class FindARTagState(smach.State):
     """ A Smach State for finding an AR Tag in a given camera topic. """
-    def __init__(self, timeout=None):
+    def __init__(self, viz_servo, base_goal, timeout=None):
         smach.State.__init__(self,
-                             outcomes = ["found", "timeout", "preempted", "aborted"],
-                             input_keys=["tag_topic", "tag_id"],
-                             output_keys=["initial_ar_pose", "ar_servo"])
+                             outcomes = ["found_tag", "timeout", "preempted", "aborted"],
+                             input_keys=["tag_id"],
+                             output_keys=["initial_ar_pose", "base_goal"])
         self.timeout = timeout
-        self.viz_servo = None
+        self.viz_servo = viz_servo
+        self.base_goal = base_goal
 
     def execute(self, userdata):
-       """ If not setup, create PRARServo instance, wait until tag is found, or timeout."""
+        """ If not setup, create PRARServo instance, wait until tag is found, or timeout."""
         #TODO: Modify find_ar_tag to accept a tag id for greater specificity
-        if self.viz_servo is None:
-            self.viz_servo = PR2ARServo(userdata["tag_topic"])
         tag, result = self.viz_servo.find_ar_tag(self.timeout)
         if result in ["preempted", "aborted", "timeout"]:
             return result
         elif result == "found_tag":
             userdata["initial_ar_pose"] = tag
-            userdata["ar_servo"] = self.viz_servo
-            return "found"
-
-class OLD_FindARTagState(smach.State):
-    """ [DEPRECATED]  A State taking servo objects and goals, and waiting to find ar tag. """
-    def __init__(self, viz_servos, viz_servo_goals, timeout=6.):
-        smach.State.__init__(self,
-                             outcomes=['found_tag', 'timeout', 'preempted', 'aborted'],
-                             output_keys=['initial_ar_pose', 'goal_ar_pose', 'servo_topic'])
-        self.viz_servos = viz_servos
-        self.viz_servo_goals = viz_servo_goals
-        self.timeout = timeout
-
-    def execute(self, userdata):
-        # This is just a mess.
-        # Figure this out and rewrite it...
-        self.service_preempt()
-
-        self.outcome_dict = {}
-        def call_find_ar_tag(te, viz_servo, fart_state, topic):
-            mean_ar, outcome = viz_servo.find_ar_tag(self.timeout)
-            fart_state.outcome_dict[topic] = (mean_ar, outcome)
-            if outcome == "found_tag":
-                fart_state.request_preempt()
-        for topic in self.viz_servos:
-            call_find_ar_tag_filled = functools.partial(call_find_ar_tag,
-                                                        viz_servo=self.viz_servos[topic],
-                                                        fart_state=self,
-                                                        topic=topic)
-            rospy.Timer(rospy.Duration(0.01), call_find_ar_tag_filled, oneshot=True)
-        while not rospy.is_shutdown():
-            if self.preempt_requested() or len(self.outcome_dict) == len(self.viz_servos):
-                break
-            rospy.sleep(0.05)
-        outcome = "timeout"
-        for topic in self.outcome_dict:
-            if self.outcome_dict[topic][1] == "found_tag":
-                userdata['initial_ar_pose'] = self.outcome_dict[topic][0]
-                userdata['goal_ar_pose'] = self.viz_servo_goals[topic]
-                userdata['servo_topic'] = topic
-                outcome = "found_tag"
-                # FIXME I should be shot for these lines: FIXME
-                if topic == "r_pr2_ar_pose_marker":
-                    rospy.set_param("/shaving_side", 'r')
-                else:
-                    rospy.set_param("/shaving_side", 'l')
-                ##################################################
-                break
-        return outcome
+            userdata["base_goal"] = self.base_goal
+            return "found_tag"
 
 class ServoARTagState(smach.State):
     """ A Smach State for servoing to an AR Tag. """
-    def __init__(self):
+    def __init__(self, viz_servo):
         smach.State.__init__(self, outcomes=['lost_tag'] + OUTCOMES_SPA,
-                                   input_keys=['goal_ar_pose', 'initial_ar_pose', 'ar_servo'])
-        self.viz_servos = None
+                                   input_keys=['base_goal', 'initial_ar_pose'])
+        self.viz_servo = viz_servo
 
     def execute(self, userdata):
         """ Servo to a goal AR Tag, reporting success or lost tag, which checking for preemption."""
-        if self.viz_servo is None:
-            self.viz_servo = userdata["ar_servo"]
         if 'initial_ar_pose' in userdata:
             initial_ar_pose = userdata.initial_ar_pose
         else:
@@ -321,131 +172,152 @@ class ServoARTagState(smach.State):
 
         preempt_timer = rospy.Timer(rospy.Duration(0.1), check_preempt)
         self.viz_servo.preempt_requested = False
-        outcome = self.viz_servo.servo_to_tag(pose_goal=userdata.goal_ar_pose,
+        outcome = self.viz_servo.servo_to_tag(pose_goal=userdata["base_goal"],
                                               initial_ar_pose=initial_ar_pose)
         preempt_timer.shutdown()
         return outcome
 
-def build_full_sm(find_tag_timeout=None, track_tag_timeout=1.0):
-    """" Compose the full Smach StateMachine from collected states for PR2 Servoing. """
-    viz_servos = {}
-    for viz_servo_topic in viz_servo_goals:
-        viz_servos[viz_servo_topic] = PR2ARServo(viz_servo_topic)
+class ServoOnTagGoal(object):
+    #TODO: Setup state machine in main look so callback can preempt running SM for re-use between tasks
+    """ A Smach State that waits for a msg.
+        Msg should contain the goal location, tag id(if any), and camera topic for AR Servoing.
+    """
+    def __init__(self, find_tag_timeout=None):
+        self.tag_goal_sub = rospy.Subscriber("ar_servo_goal_data", ARServoGoalData, self.goal_data_cb)
 
-    sm_pr2_servoing = smach.StateMachine(outcomes=OUTCOMES_SPA)
+    def pose_to_2d(self, ps):
+        """ Extract X, Y, Theta from a pose stamped msg."""
+        q = (ps.pose.orientation.x, ps.pose.orientation.y,
+             ps.pose.orientation.z, ps.pose.orientation.w)
+        rot = tft.euler_from_quaternion(q)[2]
+        return ps.pose.position.x, ps.pose.position.y, rot
 
-    with sm_pr2_servoing:
-        smach.StateMachine.add("WAIT_TAG_GOAL_DATA",
-                                WaitForTagGoalState(),
-                                transitions={"succeeded":"FIND_TAG"})
+    def goal_data_cb(self, msg):
+        """ Grab goal data from msg."""
+        #TODO: Add tag id as parameter to PR2ARServo, move to ar_track_alvar
+        #TODO: Add checking for valid inputs
+        self.viz_servo = PR2ARServo(msg.marker_topic)
+        self.base_goal = self.pose_to_2d(msg.base_pose_goal)
+        self.sm_pr2_servoing = self.build_full_sm(self.viz_servo, self.base_goal, find_tag_timeout=None)
 
-        smach.StateMachine.add("FIND_TAG",
-                                FindARTagState(find_tag_timeout),
-                                transitions={"found":"FOUND_TAG",
-                                             "timeout":"TIMEOUT_FIND_TAG",
-                                             "preempt":"WAIT_TAG_GOAL_DATA",
-                                             "aborted":"WAIT_TAG_GOAL_DATA"})
+        self.sis = smach_ros.IntrospectionServer('pr2_servo', self.sm_pr2_servoing, 'FIND_TAG')
+        self.sis.start()
+        self.sm_pr2_servoing.execute()
+        self.sis.stop()
 
-#        smach.StateMachine.add('UI_FIND_TAG_WAIT',
-#                               BoolTopicState("/pr2_ar_servo/find_tag"),
-#                               transitions={'true' : 'BEGIN_FIND_TAG',
-#                                            'false' : 'aborted'})
+    def build_full_sm(self, viz_servo, base_goal, find_tag_timeout=None):
+        """" Compose the full Smach StateMachine from collected states for PR2 Servoing. """
+        sm_pr2_servoing = smach.StateMachine(outcomes=OUTCOMES_SPA)
+        with sm_pr2_servoing:
+            smach.StateMachine.add("FIND_TAG",
+                                    FindARTagState(viz_servo, base_goal, find_tag_timeout),
+                                    transitions={"found_tag":"FOUND_TAG",
+                                                 "timeout":"TIMEOUT_FIND_TAG",
+                                                 "preempted":"preempted",
+                                                 "aborted":"aborted"})
 
-#        smach.StateMachine.add('BEGIN_FIND_TAG',
-#                               PublishState("/pr2_ar_servo/state_feedback",
-#                                            Int8, Int8(ServoStates.BEGIN_FIND_TAG)),
-#                               transitions={'succeeded' : 'FIND_AR_TAG'})
+            smach.StateMachine.add('FOUND_TAG',
+                                   PublishState("/pr2_ar_servo/state_feedback",
+                                                Int8, Int8(ServoStates.FOUND_TAG)),
+                                   transitions={'succeeded' : 'UI_SERVO_WAIT'})
 
-#        smach.StateMachine.add('FIND_AR_TAG',
-#                               FindARTagState(viz_servos, viz_servo_goals, timeout=find_tag_timeout),
-#                               transitions={'found_tag' : 'FOUND_TAG',
-#                                            'timeout' : 'TIMEOUT_FIND_TAG'})
+            smach.StateMachine.add('TIMEOUT_FIND_TAG',
+                                   PublishState("/pr2_ar_servo/state_feedback",
+                                                Int8, Int8(ServoStates.TIMEOUT_FIND_TAG)),
+                                   transitions={'succeeded' : 'FIND_TAG'})
 
-        smach.StateMachine.add('FOUND_TAG',
-                               PublishState("/pr2_ar_servo/state_feedback",
-                                            Int8, Int8(ServoStates.FOUND_TAG)),
-                               transitions={'succeeded' : 'UI_SERVO_WAIT'})
+            smach.StateMachine.add('UI_SERVO_WAIT',
+                                   BoolTopicState("/pr2_ar_servo/tag_confirm"),
+                                   transitions={'true' : 'BEGIN_SERVO',
+                                                'false' : 'UI_SERVO_WAIT'})
 
-        smach.StateMachine.add('TIMEOUT_FIND_TAG',
-                               PublishState("/pr2_ar_servo/state_feedback",
-                                            Int8, Int8(ServoStates.TIMEOUT_FIND_TAG)),
-                               transitions={'succeeded' : 'FIND_TAG'})
+            smach.StateMachine.add('BEGIN_SERVO',
+                                   PublishState("/pr2_ar_servo/state_feedback",
+                                                Int8, Int8(ServoStates.BEGIN_SERVO)),
+                                   transitions={'succeeded' : 'CC_SERVOING'})
 
+            smach.StateMachine.add('CC_SERVOING',
+                                   self.build_cc_servoing(viz_servo),
+                                   transitions={'arm_collision' : 'ARM_COLLISION',
+                                                'laser_collision' : 'LASER_COLLISION',
+                                                'user_preempted' : 'USER_PREEMPT',
+                                                'lost_tag' : 'LOST_TAG',
+                                                'succeeded' : 'SUCCESS_SERVO'})
 
-        smach.StateMachine.add('UI_SERVO_WAIT',
-                               BoolTopicState("/pr2_ar_servo/tag_confirm"),
-                               transitions={'true' : 'BEGIN_SERVO',
-                                            'false' : 'UI_FIND_TAG_WAIT'})
+            smach.StateMachine.add('SUCCESS_SERVO',
+                                   PublishState("/pr2_ar_servo/state_feedback",
+                                                Int8, Int8(ServoStates.SUCCESS_SERVO)),
+                                   transitions={'succeeded' : 'UI_SERVO_WAIT'})
 
-        smach.StateMachine.add('BEGIN_SERVO',
-                               PublishState("/pr2_ar_servo/state_feedback",
-                                            Int8, Int8(ServoStates.BEGIN_SERVO)),
-                               transitions={'succeeded' : 'CC_SERVOING'})
+            smach.StateMachine.add('ARM_COLLISION',
+                                   PublishState("/pr2_ar_servo/state_feedback",
+                                                Int8, Int8(ServoStates.ARM_COLLISION)),
+                                   transitions={'succeeded' : 'UI_SERVO_WAIT'})
 
-        smach.StateMachine.add('CC_SERVOING',
-                               build_cc_servoing(track_tag_timeout),
-                               transitions={'arm_collision' : 'ARM_COLLISION',
-                                            'laser_collision' : 'LASER_COLLISION',
-                                            'user_preempted' : 'USER_PREEMPT',
-                                            'lost_tag' : 'LOST_TAG',
-                                            'succeeded' : 'SUCCESS_SERVO'})
+            smach.StateMachine.add('LASER_COLLISION',
+                                   PublishState("/pr2_ar_servo/state_feedback",
+                                                Int8, Int8(ServoStates.LASER_COLLISION)),
+                                   transitions={'succeeded' : 'UI_SERVO_WAIT'})
 
-        smach.StateMachine.add('SUCCESS_SERVO',
-                               PublishState("/pr2_ar_servo/state_feedback",
-                                            Int8, Int8(ServoStates.SUCCESS_SERVO)),
-                               transitions={'succeeded' : 'UI_SERVO_WAIT'})
+            smach.StateMachine.add('LOST_TAG',
+                                   PublishState("/pr2_ar_servo/state_feedback",
+                                                Int8, Int8(ServoStates.LOST_TAG)),
+                                   transitions={'succeeded' : 'FIND_TAG'})
 
-        smach.StateMachine.add('ARM_COLLISION',
-                               PublishState("/pr2_ar_servo/state_feedback",
-                                            Int8, Int8(ServoStates.ARM_COLLISION)),
-                               transitions={'succeeded' : 'UI_SERVO_WAIT'})
+            smach.StateMachine.add('USER_PREEMPT',
+                                   PublishState("/pr2_ar_servo/state_feedback",
+                                                Int8, Int8(ServoStates.USER_PREEMPT)),
+                                   transitions={'succeeded' : 'UI_SERVO_WAIT'})
 
-        smach.StateMachine.add('LASER_COLLISION',
-                               PublishState("/pr2_ar_servo/state_feedback",
-                                            Int8, Int8(ServoStates.LASER_COLLISION)),
-                               transitions={'succeeded' : 'UI_SERVO_WAIT'})
+        return sm_pr2_servoing
 
-        smach.StateMachine.add('LOST_TAG',
-                               PublishState("/pr2_ar_servo/state_feedback",
-                                            Int8, Int8(ServoStates.LOST_TAG)),
-                               transitions={'succeeded' : 'FIND_TAG'})
+    def build_cc_servoing(self, viz_servo):
+        """ Create a Smach Concurrence Container.
+            Fill with states for servoing, detecting collision, and processing user preemption.
+        """
+        def term_cb(outcome_map):
+            return True
 
-        smach.StateMachine.add('USER_PREEMPT',
-                               PublishState("/pr2_ar_servo/state_feedback",
-                                            Int8, Int8(ServoStates.USER_PREEMPT)),
-                               transitions={'succeeded' : 'UI_SERVO_WAIT'})
+        def out_cb(outcome_map):
+            if outcome_map['ARM_COLLISION_DETECTION'] == 'collision':
+                return 'arm_collision'
+            #if outcome_map['LASER_COLLISION_DETECTION'] == 'collision':
+            #    return 'laser_collision'
+            if outcome_map['USER_PREEMPT_DETECTION'] == 'true':
+                return 'user_preempted'
+            if outcome_map['USER_PREEMPT_DETECTION'] == 'false':
+                return 'aborted'
+            return outcome_map['SERVOING']
 
-    return sm_pr2_servoing
+        cc_servoing = smach.Concurrence(
+                                outcomes=OUTCOMES_SPA+
+                                ['arm_collision', 'laser_collision', 'lost_tag', 'user_preempted'],
+                                input_keys=['base_goal', 'initial_ar_pose'],
+                                default_outcome='aborted',
+                                child_termination_cb=term_cb,
+                                outcome_cb=out_cb)
 
-def build_test_sm():
-    viz_servo = PR2ARServo("r_pr2_ar_pose_marker")
+        with cc_servoing:
+            smach.Concurrence.add('SERVOING',
+                                  ServoARTagState(viz_servo))
 
-    sm_only_servo = smach.StateMachine(outcomes=['lost_tag'] + OUTCOMES_SPA,
-                                       input_keys=['goal_ar_pose', 'initial_ar_pose'])
-    with sm_only_servo:
-        smach.StateMachine.add('ONLY_SERVO',
-                               ServoARTagState(viz_servo))
-    return sm_only_servo
+            smach.Concurrence.add('ARM_COLLISION_DETECTION',
+                                  ArmCollisionDetection())
+
+            #smach.Concurrence.add('LASER_COLLISION_DETECTION',
+            #                      LaserCollisionDetection())
+
+            smach.Concurrence.add('USER_PREEMPT_DETECTION',
+                                  BoolTopicState("/pr2_ar_servo/preempt"))
+
+        return cc_servoing
+
 
 def main():
     rospy.init_node("sm_pr2_servoing")
-    #userdata = smach.user_data.UserData()
-
-    # both sides spot?
-    #userdata['goal_ar_pose'] = [ 0.57226345,  0.32838129, -1.15480113]
-    #viz_servo_goals = rospy.get_param("~ar_servo_poses", {})
-    #print viz_servo_goals
-
-    if True:
-        sm_pr2_servoing = build_full_sm(find_tag_timeout=None, track_tag_timeout=1.0)
-        sis = smach_ros.IntrospectionServer('pr2_servo', sm_pr2_servoing, 'WAIT_TAG_GOAL_DATA')
-        sis.start()
-        sm_pr2_servoing.execute(userdata)
-        sis.stop()
-    else:
-        sm_test = build_test_sm()
-        rospy.sleep(4)
-        sm_test.execute(userdata)
+    find_tag_timeout = None
+    servo_on_tag = ServoOnTagGoal(find_tag_timeout)
+    rospy.spin()
 
 if __name__ == "__main__":
     main()
