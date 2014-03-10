@@ -1,0 +1,3 @@
+std_msgs/Int32 tag_id
+std_msgs/String camera_topic
+geometry_msgs/PoseStamped base_pose_goal
