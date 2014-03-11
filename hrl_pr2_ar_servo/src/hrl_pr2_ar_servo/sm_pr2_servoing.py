@@ -130,14 +130,22 @@ class PublishState(smach.State):
 
 class FindARTagState(smach.State):
     """ A Smach State for finding an AR Tag in a given camera topic. """
-    def __init__(self, viz_servo, base_goal, timeout=None):
+    def __init__(self, viz_servo, base_goal_ps, timeout=None):
         smach.State.__init__(self,
                              outcomes = ["found_tag", "timeout", "preempted", "aborted"],
                              input_keys=["tag_id"],
                              output_keys=["initial_ar_pose", "base_goal"])
+        self.tfl = tf.TransformListener()
         self.timeout = timeout
         self.viz_servo = viz_servo
-        self.base_goal = base_goal
+        self.base_goal_ps = base_goal_ps
+
+    def pose_to_2d(self, ps):
+        """ Extract X, Y, Theta from a pose stamped msg."""
+        q = (ps.pose.orientation.x, ps.pose.orientation.y,
+             ps.pose.orientation.z, ps.pose.orientation.w)
+        rot = tft.euler_from_quaternion(q)[2]
+        return ps.pose.position.x, ps.pose.position.y, rot
 
     def execute(self, userdata):
         """ If not setup, create PRARServo instance, wait until tag is found, or timeout."""
@@ -146,8 +154,14 @@ class FindARTagState(smach.State):
         if result in ["preempted", "aborted", "timeout"]:
             return result
         elif result == "found_tag":
+            now = rospy.Time.now()
+            self.tfl.waitForTransform('ar_marker', self.base_goal_ps.header.frame_id, now, rospy.Duration(10.0))
+            self.base_goal_ps.header.stamp = now
+            goal_ps = self.tfl.transformPose('ar_marker', self.base_goal_ps)
+            base_goal = self.pose_to_2d(goal_ps)
+
             userdata["initial_ar_pose"] = tag
-            userdata["base_goal"] = self.base_goal
+            userdata["base_goal"] = base_goal
             return "found_tag"
 
 class ServoARTagState(smach.State):
@@ -185,32 +199,26 @@ class ServoOnTagGoal(object):
     def __init__(self, find_tag_timeout=None):
         self.tag_goal_sub = rospy.Subscriber("ar_servo_goal_data", ARServoGoalData, self.goal_data_cb)
 
-    def pose_to_2d(self, ps):
-        """ Extract X, Y, Theta from a pose stamped msg."""
-        q = (ps.pose.orientation.x, ps.pose.orientation.y,
-             ps.pose.orientation.z, ps.pose.orientation.w)
-        rot = tft.euler_from_quaternion(q)[2]
-        return ps.pose.position.x, ps.pose.position.y, rot
 
     def goal_data_cb(self, msg):
         """ Grab goal data from msg."""
         #TODO: Add tag id as parameter to PR2ARServo, move to ar_track_alvar
         #TODO: Add checking for valid inputs
         self.viz_servo = PR2ARServo(msg.marker_topic)
-        self.base_goal = self.pose_to_2d(msg.base_pose_goal)
-        self.sm_pr2_servoing = self.build_full_sm(self.viz_servo, self.base_goal, find_tag_timeout=None)
+        self.base_goal_ps = self.pose_to_2d(msg.base_pose_goal)
+        self.sm_pr2_servoing = self.build_full_sm(self.viz_servo, self.base_goal_ps, find_tag_timeout=None)
 
         self.sis = smach_ros.IntrospectionServer('pr2_servo', self.sm_pr2_servoing, 'FIND_TAG')
         self.sis.start()
         self.sm_pr2_servoing.execute()
         self.sis.stop()
 
-    def build_full_sm(self, viz_servo, base_goal, find_tag_timeout=None):
+    def build_full_sm(self, viz_servo, base_goal_ps, find_tag_timeout=None):
         """" Compose the full Smach StateMachine from collected states for PR2 Servoing. """
         sm_pr2_servoing = smach.StateMachine(outcomes=OUTCOMES_SPA)
         with sm_pr2_servoing:
             smach.StateMachine.add("FIND_TAG",
-                                    FindARTagState(viz_servo, base_goal, find_tag_timeout),
+                                    FindARTagState(viz_servo, base_goal_ps, find_tag_timeout),
                                     transitions={"found_tag":"FOUND_TAG",
                                                  "timeout":"TIMEOUT_FIND_TAG",
                                                  "preempted":"preempted",
