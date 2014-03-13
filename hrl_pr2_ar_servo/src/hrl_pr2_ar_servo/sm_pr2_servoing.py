@@ -15,6 +15,7 @@ import smach_ros
 from std_msgs.msg import Bool, Int8, String
 from geometry_msgs.msg import PoseStamped
 from tf import transformations as tft
+import tf
 
 from pykdl_utils.joint_kinematics import create_joint_kin
 #from costmap_services.python_client import CostmapServices
@@ -155,10 +156,25 @@ class FindARTagState(smach.State):
             return result
         elif result == "found_tag":
             now = rospy.Time.now()
-            self.tfl.waitForTransform('ar_marker', self.base_goal_ps.header.frame_id, now, rospy.Duration(10.0))
+            self.tfl.waitForTransform('base_link', self.base_goal_ps.header.frame_id, now, rospy.Duration(3.0))
             self.base_goal_ps.header.stamp = now
-            goal_ps = self.tfl.transformPose('ar_marker', self.base_goal_ps)
-            base_goal = self.pose_to_2d(goal_ps)
+            goal_in_base_ps = self.tfl.transformPose('base_link', self.base_goal_ps)
+            goal_in_base = self.pose_to_2d(goal_in_base_ps) # goal_in_base = (x,y,theta)
+            print "goal in base", goal_in_base
+
+            t = self.tfl.getLatestCommonTime("ar_marker", "base_link")
+            pos, quat = self.tfl.lookupTransform("base_link", "ar_marker", t)
+            print "pos", pos
+            print "quat", quat
+            r,p,y = tft.euler_from_quaternion(quat)
+            print "rpy: %s, %s, %s" %(r,p,y)
+            tag_in_base = (pos[0], pos[1], y)
+            print "tag_in_base", tag_in_base
+
+            base_goal = (tag_in_base[0] - goal_in_base[0],
+                         tag_in_base[1] - goal_in_base[1],
+                         tag_in_base[2] - goal_in_base[2])
+            print "tag_in_goal", base_goal
 
             userdata["initial_ar_pose"] = tag
             userdata["base_goal"] = base_goal
@@ -205,7 +221,7 @@ class ServoOnTagGoal(object):
         #TODO: Add tag id as parameter to PR2ARServo, move to ar_track_alvar
         #TODO: Add checking for valid inputs
         self.viz_servo = PR2ARServo(msg.marker_topic)
-        self.base_goal_ps = self.pose_to_2d(msg.base_pose_goal)
+        self.base_goal_ps = msg.base_pose_goal
         self.sm_pr2_servoing = self.build_full_sm(self.viz_servo, self.base_goal_ps, find_tag_timeout=None)
 
         self.sis = smach_ros.IntrospectionServer('pr2_servo', self.sm_pr2_servoing, 'FIND_TAG')
