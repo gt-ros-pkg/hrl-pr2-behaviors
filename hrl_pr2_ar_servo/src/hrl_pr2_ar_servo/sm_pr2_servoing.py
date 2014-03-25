@@ -162,8 +162,13 @@ class FindARTagState(smach.State):
             goal_in_base = self.pose_to_2d(goal_in_base_ps) # goal_in_base = (x,y,theta)
             print "goal in base", goal_in_base
 
-            t = self.tfl.getLatestCommonTime("ar_marker", "base_link")
-            pos, quat = self.tfl.lookupTransform("base_link", "ar_marker", t)
+            try:
+                self.tfl.waitForTransform("ar_marker", "base_link", rospy.Time.now(), rospy.Duration(5.))
+                t = self.tfl.getLatestCommonTime("ar_marker", "base_link")
+                pos, quat = self.tfl.lookupTransform("base_link", "ar_marker", t)
+            except Exception as e:
+                rospy.logerr("[%s] TF Error:\r\n%s" % (rospy.get_name(), e))
+                return "aborted"
             print "pos", pos
             print "quat", quat
             r,p,y = tft.euler_from_quaternion(quat)
@@ -215,7 +220,6 @@ class ServoOnTagGoal(object):
     def __init__(self, find_tag_timeout=None):
         self.tag_goal_sub = rospy.Subscriber("ar_servo_goal_data", ARServoGoalData, self.goal_data_cb)
 
-
     def goal_data_cb(self, msg):
         """ Grab goal data from msg."""
         #TODO: Add tag id as parameter to PR2ARServo, move to ar_track_alvar
@@ -224,7 +228,7 @@ class ServoOnTagGoal(object):
         self.base_goal_ps = msg.base_pose_goal
         self.sm_pr2_servoing = self.build_full_sm(self.viz_servo, self.base_goal_ps, find_tag_timeout=None)
 
-        self.sis = smach_ros.IntrospectionServer('pr2_servo', self.sm_pr2_servoing, 'FIND_TAG')
+        self.sis = smach_ros.IntrospectionServer('pr2_servo', self.sm_pr2_servoing, 'SEARCHING_FOR_TAG')
         self.sis.start()
         self.sm_pr2_servoing.execute()
         self.sis.stop()
@@ -233,6 +237,11 @@ class ServoOnTagGoal(object):
         """" Compose the full Smach StateMachine from collected states for PR2 Servoing. """
         sm_pr2_servoing = smach.StateMachine(outcomes=OUTCOMES_SPA)
         with sm_pr2_servoing:
+            smach.StateMachine.add('SEARCHING_FOR_TAG',
+                                   PublishState("/pr2_ar_servo/state_feedback",
+                                                Int8, Int8(ServoStates.BEGIN_FIND_TAG)),
+                                   transitions={'succeeded' : 'FIND_TAG'})
+
             smach.StateMachine.add("FIND_TAG",
                                     FindARTagState(viz_servo, base_goal_ps, find_tag_timeout),
                                     transitions={"found_tag":"FOUND_TAG",
@@ -271,7 +280,7 @@ class ServoOnTagGoal(object):
             smach.StateMachine.add('SUCCESS_SERVO',
                                    PublishState("/pr2_ar_servo/state_feedback",
                                                 Int8, Int8(ServoStates.SUCCESS_SERVO)),
-                                   transitions={'succeeded' : 'UI_SERVO_WAIT'})
+                                   transitions={'succeeded' : 'succeeded'})
 
             smach.StateMachine.add('ARM_COLLISION',
                                    PublishState("/pr2_ar_servo/state_feedback",
@@ -333,7 +342,6 @@ class ServoOnTagGoal(object):
 
             smach.Concurrence.add('USER_PREEMPT_DETECTION',
                                   BoolTopicState("/pr2_ar_servo/preempt"))
-
         return cc_servoing
 
 
