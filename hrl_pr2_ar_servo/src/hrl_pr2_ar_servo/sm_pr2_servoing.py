@@ -131,12 +131,15 @@ class PublishState(smach.State):
 
 class FindARTagState(smach.State):
     """ A Smach State for finding an AR Tag in a given camera topic. """
-    def __init__(self, viz_servo, base_goal_ps, timeout=None):
+    def __init__(self, viz_servo, base_goal_ps, transform_listener=None, timeout=None):
         smach.State.__init__(self,
                              outcomes = ["found_tag", "timeout", "preempted", "aborted"],
                              input_keys=["tag_id"],
                              output_keys=["initial_ar_pose", "base_goal"])
-        self.tfl = tf.TransformListener()
+        if transform_listener is None:
+            self.tfl = tf.TransformListener()
+        else:
+            self.tfl = transform_listener
         self.timeout = timeout
         self.viz_servo = viz_servo
         self.base_goal_ps = base_goal_ps
@@ -152,18 +155,20 @@ class FindARTagState(smach.State):
         """ If not setup, create PRARServo instance, wait until tag is found, or timeout."""
         #TODO: Modify find_ar_tag to accept a tag id for greater specificity
         tag, result = self.viz_servo.find_ar_tag(self.timeout)
+        print "Find ar tag result: ", result
         if result in ["preempted", "aborted", "timeout"]:
             return result
         elif result == "found_tag":
             now = rospy.Time.now()
-            self.tfl.waitForTransform('base_link', self.base_goal_ps.header.frame_id, now, rospy.Duration(3.0))
+            self.tfl.waitForTransform('base_link', self.base_goal_ps.header.frame_id,
+                                       now, rospy.Duration(20.0))
             self.base_goal_ps.header.stamp = now
             goal_in_base_ps = self.tfl.transformPose('base_link', self.base_goal_ps)
             goal_in_base = self.pose_to_2d(goal_in_base_ps) # goal_in_base = (x,y,theta)
             print "goal in base", goal_in_base
 
             try:
-                self.tfl.waitForTransform("ar_marker", "base_link", rospy.Time.now(), rospy.Duration(5.))
+                self.tfl.waitForTransform("ar_marker", "base_link", rospy.Time.now(), rospy.Duration(5.0))
                 t = self.tfl.getLatestCommonTime("ar_marker", "base_link")
                 pos, quat = self.tfl.lookupTransform("base_link", "ar_marker", t)
             except Exception as e:
@@ -219,6 +224,7 @@ class ServoOnTagGoal(object):
     """
     def __init__(self, find_tag_timeout=None):
         self.tag_goal_sub = rospy.Subscriber("ar_servo_goal_data", ARServoGoalData, self.goal_data_cb)
+        self.tfl = tf.TransformListener()
 
     def goal_data_cb(self, msg):
         """ Grab goal data from msg."""
@@ -243,7 +249,7 @@ class ServoOnTagGoal(object):
                                    transitions={'succeeded' : 'FIND_TAG'})
 
             smach.StateMachine.add("FIND_TAG",
-                                    FindARTagState(viz_servo, base_goal_ps, find_tag_timeout),
+                                    FindARTagState(viz_servo, base_goal_ps, self.tfl, find_tag_timeout),
                                     transitions={"found_tag":"FOUND_TAG",
                                                  "timeout":"TIMEOUT_FIND_TAG",
                                                  "preempted":"preempted",

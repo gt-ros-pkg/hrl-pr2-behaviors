@@ -230,9 +230,9 @@ class PR2ARServo(object):
             kf_r.update(ar_err[2])
             print "initial_ar_pose", initial_ar_pose
             
-        pid_x = PIDController(k_p=0.5, rate=rate, saturation=0.05)
-        pid_y = PIDController(k_p=0.5, rate=rate, saturation=0.05)
-        pid_r = PIDController(k_p=0.5, rate=rate, saturation=0.08)
+        pid_x = PIDController(k_p=0.75, rate=rate, saturation=0.05)
+        pid_y = PIDController(k_p=0.75, rate=rate, saturation=0.05)
+        pid_r = PIDController(k_p=0.75, rate=rate, saturation=0.08)
         r = rospy.Rate(rate)
         self.preempt_requested = False
         while True:
