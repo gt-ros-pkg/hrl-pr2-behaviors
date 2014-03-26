@@ -159,7 +159,7 @@ class FindARTagState(smach.State):
         if result in ["preempted", "aborted", "timeout"]:
             return result
         elif result == "found_tag":
-            now = rospy.Time.now()
+            now = rospy.Time.now() + rospy.Duration(0.5)
             self.tfl.waitForTransform('base_link', self.base_goal_ps.header.frame_id,
                                        now, rospy.Duration(20.0))
             self.base_goal_ps.header.stamp = now
