@@ -31,14 +31,11 @@ class ServoKalmanFilter(object):
         self.R = np.mat([sigma_z])
         self.x_cur = None
 
-#        self.resid_q_len = int(1./delta_t)
         self.resid_sigma_reject = 3.
         self.min_reject = 0.1
         self.resid_queue = deque([], int(1./delta_t))
-        
-#        self.unreli_q_len = 1 * int(1./delta_t)
         self.unreli_queue = deque([], int(1./delta_t))
-        self.unreli_weights = np.linspace(2, 0, self.unreli_q_len)
+        self.unreli_weights = np.linspace(2, 0, self.unreli_queue.maxlen)
 
     def update(self, z_obs, new_obs=True):
         is_unreli = False
@@ -68,7 +65,7 @@ class ServoKalmanFilter(object):
                 self.P_cur = (np.mat(np.eye(2)) - K_gain * self.H) * P_pred
 
             # record residual
-            if len(self.resid_queue) == self.resid_q_len:
+            if len(self.resid_queue) == self.resid_queue.maxlen:
                 self.resid_queue.popleft()
             self.resid_queue.append(y_resi)
         else:

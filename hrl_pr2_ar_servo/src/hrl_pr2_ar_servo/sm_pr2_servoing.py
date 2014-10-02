@@ -131,28 +131,16 @@ class PublishState(smach.State):
 
 class FindARTagState(smach.State):
     """ A Smach State for finding an AR Tag in a given camera topic. """
-    def __init__(self, viz_servo, base_goal_ps, transform_listener=None, timeout=None):
+    def __init__(self, viz_servo, timeout=None):
         smach.State.__init__(self,
                              outcomes = ["found_tag", "timeout", "preempted", "aborted"],
                              input_keys=["tag_id"],
-                             output_keys=["initial_ar_pose", "base_goal"])
-        if transform_listener is None:
-            self.tfl = tf.TransformListener()
-        else:
-            self.tfl = transform_listener
+                             output_keys=["initial_ar_pose"])
         self.timeout = timeout
         self.viz_servo = viz_servo
-        self.base_goal_ps = base_goal_ps
-
-    def pose_to_2d(self, ps):
-        """ Extract X, Y, Theta from a pose stamped msg."""
-        q = (ps.pose.orientation.x, ps.pose.orientation.y,
-             ps.pose.orientation.z, ps.pose.orientation.w)
-        rot = tft.euler_from_quaternion(q)[2]
-        return ps.pose.position.x, ps.pose.position.y, rot
 
     def execute(self, userdata):
-        """ If not setup, create PRARServo instance, wait until tag is found, or timeout."""
+        """ Wait until tag is found, or timeout."""
         def check_preempt(event):
             if self.preempt_requested():
                 self.service_preempt()
@@ -164,51 +152,28 @@ class FindARTagState(smach.State):
         if result in ["preempted", "aborted", "timeout"]:
             return result
         elif result == "found_tag":
-            now = rospy.Time.now() + rospy.Duration(0.5)
-            self.tfl.waitForTransform('base_link', self.base_goal_ps.header.frame_id,
-                                       now, rospy.Duration(20.0))
-            self.base_goal_ps.header.stamp = now
-            goal_in_base_ps = self.tfl.transformPose('base_link', self.base_goal_ps)
-            goal_in_base = self.pose_to_2d(goal_in_base_ps) # goal_in_base = (x,y,theta)
-            try:
-                self.tfl.waitForTransform("ar_marker", "base_link", rospy.Time.now(), rospy.Duration(5.0))
-                t = self.tfl.getLatestCommonTime("ar_marker", "base_link")
-                pos, quat = self.tfl.lookupTransform("base_link", "ar_marker", t)
-            except Exception as e:
-                rospy.logerr("[%s] TF Error:\r\n%s" % (rospy.get_name(), e))
-                return "aborted"
-            r,p,y = tft.euler_from_quaternion(quat)
-            tag_in_base = (pos[0], pos[1], y)
-            base_goal = (tag_in_base[0] - goal_in_base[0],
-                         tag_in_base[1] - goal_in_base[1],
-                         tag_in_base[2] - goal_in_base[2])
             userdata["initial_ar_pose"] = tag
-            userdata["base_goal"] = base_goal
             return "found_tag"
 
 class ServoARTagState(smach.State):
     """ A Smach State for servoing to an AR Tag. """
-    def __init__(self, viz_servo):
+    def __init__(self, viz_servo, tag_goal_xyt):
         smach.State.__init__(self, outcomes=['lost_tag'] + OUTCOMES_SPA,
-                                   input_keys=['base_goal', 'initial_ar_pose'])
+                                   input_keys=['initial_ar_pose'])
         self.viz_servo = viz_servo
+        self.tag_goal_xyt = tag_goal_xyt
 
     def execute(self, userdata):
         """ Servo to a goal AR Tag, reporting success or lost tag, which checking for preemption."""
-        if 'initial_ar_pose' in userdata:
-            initial_ar_pose = userdata.initial_ar_pose
-        else:
-            rospy.logerr("Initial AR pose should be in userdata")
-            initial_ar_pose = None
-
         def check_preempt(event):
             if self.preempt_requested():
                 self.service_preempt()
                 self.viz_servo.request_preempt()
         preempt_timer = rospy.Timer(rospy.Duration(0.1), check_preempt)
+
+        initial_ar_pose = userdata['initial_ar_pose'] if 'initial_ar_pose' in userdata else None
         self.viz_servo.preempt_requested = False
-        outcome = self.viz_servo.servo_to_tag(pose_goal=userdata["base_goal"],
-                                              initial_ar_pose=initial_ar_pose)
+        outcome = self.viz_servo.servo_to_tag(pose_goal=self.tag_goal_xyt, initial_ar_pose=initial_ar_pose)
         preempt_timer.shutdown()
         return outcome
 
@@ -216,12 +181,11 @@ class ServoOnTagGoal(Thread):
     """ A Smach State that waits for a msg.
         Msg should contain the goal location, tag id(if any), and camera topic for AR Servoing.
     """
-    def __init__(self, marker_topic, base_goal, tag_id, find_tag_timeout=None, tfl=None):
+    def __init__(self, marker_topic, tag_goal_xyt, tag_id, find_tag_timeout=None):
         Thread.__init__(self)
-        self.tfl = tf.TransformListener() if tfl is None else tfl
+        self.tag_goal_xyt = tag_goal_xyt
         self.viz_servo = PR2ARServo(marker_topic)
-        self.base_goal_ps = base_goal
-        self.sm_pr2_servoing = self.build_full_sm(self.viz_servo, self.base_goal_ps, find_tag_timeout=None)
+        self.sm_pr2_servoing = self.build_full_sm(self.viz_servo, self.tag_goal_xyt, find_tag_timeout=None)
         self.daemon = True
 
     def preempt(self):
@@ -231,7 +195,7 @@ class ServoOnTagGoal(Thread):
         self.sm_pr2_servoing.execute()
         rospy.loginfo("[%s] Servoing state machine completed" % rospy.get_name())
 
-    def build_full_sm(self, viz_servo, base_goal_ps, find_tag_timeout=None):
+    def build_full_sm(self, viz_servo, tag_goal_xyt, find_tag_timeout=None):
         """" Compose the full Smach StateMachine from collected states for PR2 Servoing. """
         sm_pr2_servoing = smach.StateMachine(outcomes=OUTCOMES_SPA)
         with sm_pr2_servoing:
@@ -241,7 +205,7 @@ class ServoOnTagGoal(Thread):
                                    transitions={'succeeded' : 'FIND_TAG'})
 
             smach.StateMachine.add("FIND_TAG",
-                                    FindARTagState(viz_servo, base_goal_ps, self.tfl, find_tag_timeout),
+                                    FindARTagState(viz_servo, find_tag_timeout),
                                     transitions={"found_tag":"FOUND_TAG",
                                                  "timeout":"TIMEOUT_FIND_TAG",
                                                  "preempted":"preempted",
@@ -268,7 +232,7 @@ class ServoOnTagGoal(Thread):
                                    transitions={'succeeded' : 'CC_SERVOING'})
 
             smach.StateMachine.add('CC_SERVOING',
-                                   self.build_cc_servoing(viz_servo),
+                                   self.build_cc_servoing(viz_servo, tag_goal_xyt),
                                    transitions={'arm_collision' : 'ARM_COLLISION',
                                                 'laser_collision' : 'LASER_COLLISION',
                                                 'user_preempted' : 'USER_PREEMPT',
@@ -302,7 +266,7 @@ class ServoOnTagGoal(Thread):
 
         return sm_pr2_servoing
 
-    def build_cc_servoing(self, viz_servo):
+    def build_cc_servoing(self, viz_servo, tag_goal_xyt):
         """ Create a Smach Concurrence Container.
             Fill with states for servoing, detecting collision, and processing user preemption.
         """
@@ -323,14 +287,14 @@ class ServoOnTagGoal(Thread):
         cc_servoing = smach.Concurrence(
                                 outcomes=OUTCOMES_SPA+
                                 ['arm_collision', 'laser_collision', 'lost_tag', 'user_preempted'],
-                                input_keys=['base_goal', 'initial_ar_pose'],
+                                input_keys=['initial_ar_pose'],
                                 default_outcome='aborted',
                                 child_termination_cb=term_cb,
                                 outcome_cb=out_cb)
 
         with cc_servoing:
             smach.Concurrence.add('SERVOING',
-                                  ServoARTagState(viz_servo))
+                                  ServoARTagState(viz_servo, tag_goal_xyt))
 
             smach.Concurrence.add('ARM_COLLISION_DETECTION',
                                   ArmCollisionDetection())
@@ -348,8 +312,35 @@ class ServoSMManager(object):
         self.servo_sm_thread = None
         self.tfl = tf.TransformListener()
         self.tag_goal_sub = rospy.Subscriber("ar_servo_goal_data", ARServoGoalData, self.goal_data_cb)
+        self.debug_pub = rospy.Publisher("ar_tag_goal", PoseStamped, latch=True)
+
+    def pose_to_2d(self, ps):
+        """ Extract X, Y, Theta from a pose stamped msg."""
+        q = (ps.pose.orientation.x, ps.pose.orientation.y,
+             ps.pose.orientation.z, ps.pose.orientation.w)
+        rot = tft.euler_from_quaternion(q)[2]
+        return ps.pose.position.x, ps.pose.position.y, rot
 
     def goal_data_cb(self, msg):
+        # Receive: desired (goal) pose of tag
+        print "Tag goal pose (received): ", msg.tag_goal_pose
+        if not 'base_link' in msg.tag_goal_pose.header.frame_id:
+            #Transform to base link if necessary
+            try:
+                now = rospy.get_rostime()
+                msg.tag_goal_pose.header.stamp = now
+                self.tfl.waitForTransform("base_link", msg.tag_goal_pose.header.frame_id,
+                                          now, rospy.Duration(5.0))
+                msg.tag_goal_pose = self.tfl.transformPose('base_link', msg.tag_goal_pose)
+            except Exception as e:
+                rospy.logerr("[%s] TF Error:\r\n%s" % (rospy.get_name(), e.message))
+                return
+        self.debug_pub.publish(msg.tag_goal_pose)
+        tag_goal_xyt = self.pose_to_2d(msg.tag_goal_pose) #convert tag goal to (x,y,theta) triple
+        print "Tag goal pose (transformed): ", msg.tag_goal_pose
+        print "Tag goal tuple: ", tag_goal_xyt
+
+        #Stop existing state machine if necessary
         if self.servo_sm_thread is not None:
             self.servo_sm_thread.preempt()
             self.servo_sm_thread.join(10)
@@ -357,11 +348,11 @@ class ServoSMManager(object):
                 rospy.logerr("[%s] Old servoing thread is not dead yet!" % rospy.get_name())
                 return
 
+        #Start new state machine with new data
         self.servo_sm_thread = ServoOnTagGoal(msg.marker_topic,
-                                              msg.base_pose_goal,
+                                              tag_goal_xyt,
                                               msg.tag_id,
-                                              self.find_tag_timeout,
-                                              tfl=self.tfl)
+                                              self.find_tag_timeout)
         self.servo_sm_thread.start()
         rospy.loginfo("[%s] Started new servo state machine." % rospy.get_name())
 
