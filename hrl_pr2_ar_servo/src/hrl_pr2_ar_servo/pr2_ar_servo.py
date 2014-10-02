@@ -31,13 +31,13 @@ class ServoKalmanFilter(object):
         self.R = np.mat([sigma_z])
         self.x_cur = None
 
-        self.resid_q_len = int(1./delta_t)
+#        self.resid_q_len = int(1./delta_t)
         self.resid_sigma_reject = 3.
         self.min_reject = 0.1
-        self.resid_queue = deque()
+        self.resid_queue = deque([], int(1./delta_t))
         
-        self.unreli_q_len = 1 * int(1./delta_t)
-        self.unreli_queue = deque()
+#        self.unreli_q_len = 1 * int(1./delta_t)
+        self.unreli_queue = deque([], int(1./delta_t))
         self.unreli_weights = np.linspace(2, 0, self.unreli_q_len)
 
     def update(self, z_obs, new_obs=True):
@@ -56,8 +56,8 @@ class ServoKalmanFilter(object):
             K_gain = P_pred * self.H.T * S_resi**-1 # Kalman gain
 
             # check residual to be consistent with recent residuals
-            if (len(self.resid_queue) == self.resid_q_len and
-                np.fabs(y_resi) > max(self.min_reject, 
+            if (len(self.resid_queue) == self.resid_queue.maxlen and
+               np.fabs(y_resi) > max(self.min_reject,
                                       self.resid_sigma_reject * np.std(self.resid_queue))):
                 # we have determined this observation to be unreliable
                 print "INCONSISTENT", self.resid_queue
@@ -76,8 +76,6 @@ class ServoKalmanFilter(object):
             is_unreli = True
 
         # record is_unreli
-        if len(self.unreli_queue) == self.unreli_q_len:
-            self.unreli_queue.popleft()
         self.unreli_queue.append(is_unreli)
 
         # find the unreli level
@@ -85,8 +83,8 @@ class ServoKalmanFilter(object):
         # in the pase few seconds filtered with linear weights
         # a value of 0 means there are no unreliable estimates, 
         # 1 means there is no reliable state estimate
-        if len(self.unreli_queue) == self.unreli_q_len:
-            unreli_level = np.sum(self.unreli_weights * self.unreli_queue) / self.unreli_q_len
+        if len(self.unreli_queue) == self.unreli_queue.maxlen:
+            unreli_level = np.sum(self.unreli_weights * self.unreli_queue) / self.unreli_queue.maxlen
         else:
             unreli_level = 0.
 
@@ -133,7 +131,7 @@ class PR2ARServo(object):
         cur_ar_pose = base_B_camera * camera_B_tag
         # check to see if the tag is in front of the robot
         if cur_ar_pose[0,3] < 0.:
-            #rospy.logwarn("Strange AR toolkit bug!")
+            rospy.logwarn("Tag behind robot: Strange AR toolkit bug!")
             return
         self.cur_ar_pose = cur_ar_pose
         self.ar_pose_updated = True
@@ -163,26 +161,25 @@ class PR2ARServo(object):
 
     def find_ar_tag(self, timeout=None):
         rate = 8.
-        ar_2d_q_len = 4
         sigma_thresh = [0.05, 0.01, 0.08]
-        no_mean_thresh = 0.5
+        new_obs_mean_thresh = 0.5
         r = rospy.Rate(rate)
-        ar_2d_queue = deque()
-        new_obs_queue = deque()
-        start_time = rospy.get_time()
+        ar_2d_queue = deque([], maxlen=4)
+        new_obs_queue = deque([], maxlen=4)
         self.preempt_requested = False
+        end_time = (rospy.get_time() + timeout) if timeout is not None else None
         while True:
-            if timeout is not None and rospy.get_time() - start_time > timeout:
+            if end_time is not None and rospy.get_time() > end_time:
                 rospy.logwarn("[pr2_viz_servo] find_ar_tag timed out, current ar_sigma: " + 
                               str(np.std(ar_2d_queue, 0)) +
                               " sigma_thresh: " +
                               str(sigma_thresh))
-                return None, 'timeout'
+                return (None, 'timeout')
             if self.preempt_requested:
                 self.preempt_requested = False
-                return None, 'preempted'
+                return (None, 'preempted')
             if rospy.is_shutdown():
-                return None, 'aborted'
+                return (None, 'aborted')
 
             if self.cur_ar_pose is not None:
                 # make sure we have a new observation
@@ -190,21 +187,16 @@ class PR2ARServo(object):
                 self.ar_pose_updated = False
 
                 if new_obs:
-                    if len(ar_2d_queue) == ar_2d_q_len:
-                        ar_2d_queue.popleft()
-                    ar_2d = homo_mat_to_2d(self.cur_ar_pose)
-                    ar_2d_queue.append(ar_2d)
-
-                if len(new_obs_queue) == ar_2d_q_len:
-                    new_obs_queue.popleft()
+                    ar_2d_queue.append( homo_mat_to_2d(self.cur_ar_pose) )
                 new_obs_queue.append(new_obs)
 
                 # see if we have a low variance tag
-                if len(ar_2d_queue) == ar_2d_q_len:
+                if len(ar_2d_queue) == ar_2d_queue.maxlen:
                     ar_sigma = np.std(ar_2d_queue, 0)
-                    no_mean = np.mean(new_obs_queue, 0)
-                    print ar_sigma, no_mean
-                    if np.all(ar_sigma < sigma_thresh) and no_mean >= no_mean_thresh:
+                    new_obs_mean = np.mean(new_obs_queue, 0)
+                    print "AR Tag Sigma:", ar_sigma, " / ", sigma_thresh
+                    print "Data Freshness: ", new_obs_mean, " / ", new_obs_mean_thresh
+                    if np.all(ar_sigma < sigma_thresh) and new_obs_mean >= new_obs_mean_thresh:
                         return np.mean(ar_2d_queue, 0), 'found_tag'
             r.sleep()
 
@@ -212,10 +204,10 @@ class PR2ARServo(object):
         lost_tag_thresh = 0.6 #0.4
 
         # TODO REMOVE
-        err_pub = rospy.Publisher("servo_err", Float32MultiArray)
-        if False:
-            self.test_move()
-            return "aborted"
+#        err_pub = rospy.Publisher("servo_err", Float32MultiArray)
+#        if False:
+#            self.test_move()
+#            return "aborted"
         #######################
 
         goal_ar_pose = homo_mat_from_2d(*pose_goal)
@@ -229,7 +221,7 @@ class PR2ARServo(object):
             kf_y.update(ar_err[1])
             kf_r.update(ar_err[2])
             print "initial_ar_pose", initial_ar_pose
-            
+
         pid_x = PIDController(k_p=0.75, rate=rate, saturation=0.05)
         pid_y = PIDController(k_p=0.75, rate=rate, saturation=0.05)
         pid_r = PIDController(k_p=0.75, rate=rate, saturation=0.08)
@@ -271,10 +263,10 @@ class PR2ARServo(object):
 
                 print "Noise:", x_unreli, y_unreli, r_unreli
                 # TODO REMOVE
-                ma = Float32MultiArray()
-                ma.data = [x_filt_err[0,0], x_filt_err[1,0], ar_err[0], 
-                           x_unreli, y_unreli, r_unreli]
-                err_pub.publish(ma)
+                #ma = Float32MultiArray()
+                #ma.data = [x_filt_err[0,0], x_filt_err[1,0], ar_err[0], 
+                #           x_unreli, y_unreli, r_unreli]
+                #err_pub.publish(ma)
 
                 print "xerr"
                 print x_filt_err

@@ -213,7 +213,6 @@ class ServoARTagState(smach.State):
         return outcome
 
 class ServoOnTagGoal(Thread):
-    #TODO: Setup state machine in main look so callback can preempt running SM for re-use between tasks
     """ A Smach State that waits for a msg.
         Msg should contain the goal location, tag id(if any), and camera topic for AR Servoing.
     """
