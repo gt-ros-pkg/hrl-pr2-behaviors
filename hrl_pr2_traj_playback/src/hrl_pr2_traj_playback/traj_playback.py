@@ -24,6 +24,7 @@ JOINT_VELOCITY_WEIGHT = [3.0, 1.7, 1.7, 1.0, 1.0, 1.0, 0.5]
 CTRL_NAME_LOW = '%s_joint_controller_low'
 PARAM_FILE_LOW = '$(find hrl_pr2_arms)/params/joint_traj_params_electric_low.yaml'
 CTRL_NAME_NONE = '%s_joint_controller_none'
+CTRL_NAME_DEFAULT = '%s_arm_controller'
 PARAM_FILE_NONE = '$(find hrl_pr2_arms)/params/joint_traj_params_electric_none.yaml'
 
 ##
@@ -230,14 +231,16 @@ def exec_traj_from_file(filename, ctrl_name=CTRL_NAME_LOW, param_file=PARAM_FILE
     return traj_ctrl.execute(traj, rate * rate_mult, blocking)
 
 class TrajectorySaver(object):
-    def __init__(self, rate):
+    def __init__(self, rate, ctrl_name):
         self.rate = rate
+        self.ctrl_name = ctrl_name
 
     def record_trajectory(self, arm_char, blocking=True):
         self.traj = []
         self.stop_recording = False
         self.is_recording = True
-        self.cur_arm = create_ep_arm(arm_char, timeout=5)
+        self.cur_arm = create_ep_arm(arm_char, PR2ArmJointTraj, controller_name=self.ctrl_name, timeout=8)
+#        self.cur_arm = create_ep_arm(arm_char, base_link='torso_lift_link', end_link='l_wrist_roll_link', timeout=5)
         def rec_traj(te):
             rospy.loginfo("[arm_pose_move_controller] Recording trajectory.")
             r = rospy.Rate(self.rate)
@@ -363,7 +366,7 @@ def main():
     p.add_option('-t', '--traj_mode', dest="traj_mode",
                  action="store_true", default=False,
                  help="Trajectory mode.")
-    p.add_option('-c', '--ctrl_name', dest="ctrl_name", default=None, #CTRL_NAME_LOW,
+    p.add_option('-c', '--ctrl_name', dest="ctrl_name", default=CTRL_NAME_LOW,
                  help="Controller to run the playback with.")
     p.add_option('-p', '--params', dest="param_file", default=None, #PARAM_FILE_LOW,
                  help="YAML file to save parameters in or load from.")
@@ -393,7 +396,7 @@ def main():
         if opts.traj_mode:
             ctrl_switcher = ControllerSwitcher()
             ctrl_switcher.carefree_switch(arm_char, CTRL_NAME_NONE, PARAM_FILE_NONE, reset=False)
-            traj_saver = TrajectorySaver(RATE)
+            traj_saver = TrajectorySaver(RATE, CTRL_NAME_NONE)
             raw_input("Press enter to start recording")
             traj_saver.record_trajectory(arm_char, blocking=False)
 
