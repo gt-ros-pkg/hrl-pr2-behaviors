@@ -2,14 +2,14 @@
   <name>hrl_pr2_tool_grasp</name>
   <version>0.0.0</version>
   <description>ar_tool_grasp</description>
-  <maintainer email="">pgrice</maintainer>
+  <maintainer email="phillip.grice@gatech.edu">Phillip Grice</maintainer>
 
   <license>BSD</license>
 
   <url type="website">http://ros.org/wiki/ar_tool_grasp</url>
   <!-- <url type="bugtracker"></url> -->
 
-  <author>pgrice</author>
+  <author email="phillip.grice@gatech.edu">Phillip Grice</author>
 
   <!-- Dependencies which this package needs to build itself. -->
   <buildtool_depend>catkin</buildtool_depend>
@@ -29,13 +29,5 @@
   <run_depend>actionlib_msgs</run_depend>
   <run_depend>geometry_msgs</run_depend>
   <run_depend>pr2_controllers_msgs</run_depend>
-
-  <!-- Dependencies needed only for running tests. -->
-  <!-- <test_depend>rospy</test_depend> -->
-  <!-- <test_depend>ar_track_alvar</test_depend> -->
-  <!-- <test_depend>actionlib</test_depend> -->
-  <!-- <test_depend>actionlib_msgs</test_depend> -->
-  <!-- <test_depend>geometry_msgs</test_depend> -->
-  <!-- <test_depend>pr2_controllers_msgs</test_depend> -->
 
 </package>

@@ -2,9 +2,7 @@
   <name>hrl_pr2_ar_servo</name>
   <version>0.0.0</version>
   <description>hrl_pr2_ar_servo</description>
-  <maintainer email="">Kelsey Hawkins</maintainer>
-  <maintainer email="">Advisor: Prof. Charlie Kemp</maintainer>
-  <maintainer email="">Lab: Healthcare Robotics Lab </maintainer>
+  <maintainer email="phillip.grice@gatech.edu">Phillip Grice</maintainer>
 
   <license>New BSD</license>
 
@@ -12,8 +10,9 @@
   <!-- <url type="bugtracker"></url> -->
 
   <author>Kelsey Hawkins</author>
+  <author email="phillip.grice@gatech.edu">Phillip Grice</author>
   <author>Advisor: Prof. Charlie Kemp</author>
-  <author>Lab: Healthcare Robotics Lab </author>
+  <author>Lab: Healthcare Robotics Lab</author>
 
   <!-- Dependencies which this package needs to build itself. -->
   <buildtool_depend>catkin</buildtool_depend>
@@ -33,13 +32,5 @@
   <run_depend>tf_conversions</run_depend>
   <run_depend>pykdl_utils</run_depend>
   <run_depend>ar_pose</run_depend>
-
-  <!-- Dependencies needed only for running tests. -->
-  <!-- <test_depend>pcl</test_depend> -->
-  <!-- <test_depend>pcl_ros</test_depend> -->
-  <!-- <test_depend>image_geometry</test_depend> -->
-  <!-- <test_depend>tf_conversions</test_depend> -->
-  <!-- <test_depend>pykdl_utils</test_depend> -->
-  <!-- <test_depend>ar_pose</test_depend> -->
 
 </package>

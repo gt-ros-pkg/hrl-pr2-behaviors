@@ -2,14 +2,15 @@
   <name>hrl_pr2_force_ctrl</name>
   <version>0.0.0</version>
   <description>hrl_pr2_force_ctrl</description>
-  <maintainer email="">Kelsey Hawkins</maintainer>
+  <maintainer email="phillip.grice@gatech.edu">Phillip Grice</maintainer>
 
   <license>BSD</license>
 
   <url type="website">http://ros.org/wiki/hrl_pr2_force_ctrl</url>
-  <!-- <url type="bugtracker"></url> -->
 
   <author>Kelsey Hawkins</author>
+  <author>Advisor: Charles C. Kemp</author>
+  <author>Lab: Healthcare Robotics Lab at Georgia Tech</author>
 
   <!-- Dependencies which this package needs to build itself. -->
   <buildtool_depend>catkin</buildtool_depend>
@@ -29,14 +30,6 @@
   <run_depend>realtime_tools</run_depend>
   <run_depend>rosrt</run_depend>
   <run_depend>pr2_manipulation_controllers</run_depend>
-
-  <!-- Dependencies needed only for running tests. -->
-  <!-- <test_depend>hrl_pr2_arms</test_depend> -->
-  <!-- <test_depend>tf</test_depend> -->
-  <!-- <test_depend>pr2_controller_interface</test_depend> -->
-  <!-- <test_depend>realtime_tools</test_depend> -->
-  <!-- <test_depend>rosrt</test_depend> -->
-  <!-- <test_depend>pr2_manipulation_controllers</test_depend> -->
 
 <export>
     <pr2_controller_interface plugin="${prefix}/controller_plugins.xml"/>

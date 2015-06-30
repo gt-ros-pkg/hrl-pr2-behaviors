@@ -2,7 +2,7 @@
   <name>hrl_pr2_traj_playback</name>
   <version>0.0.0</version>
   <description>For recording and playing back trajectories safely.</description>
-  <maintainer email="">Kelsey Hawkins</maintainer>
+  <maintainer email="phillip.grice@gatech.edu">Phillip Grice</maintainer>
 
   <license>BSD</license>
 
@@ -10,6 +10,7 @@
   <!-- <url type="bugtracker"></url> -->
 
   <author>Kelsey Hawkins</author>
+  <author email="phillip.grice@gatech.edu">Phillip Grice</author>
 
   <!-- Dependencies which this package needs to build itself. -->
   <buildtool_depend>catkin</buildtool_depend>
@@ -23,10 +24,5 @@
   <run_depend>std_srvs</run_depend>
   <run_depend>actionlib</run_depend>
   <run_depend>hrl_pr2_arms</run_depend>
-
-  <!-- Dependencies needed only for running tests. -->
-  <!-- <test_depend>std_srvs</test_depend> -->
-  <!-- <test_depend>actionlib</test_depend> -->
-  <!-- <test_depend>hrl_pr2_arms</test_depend> -->
 
 </package>
