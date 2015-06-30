@@ -19,12 +19,14 @@
 
   <!-- Dependencies needed to compile this package. -->
   <build_depend>image_geometry</build_depend>
+  <build_depend>dynamic_reconfigure</build_depend>
   <build_depend>tf_conversions</build_depend>
   <build_depend>pykdl_utils</build_depend>
   <build_depend>ar_track_alvar</build_depend>
 
   <!-- Dependencies needed after this package is compiled. -->
   <run_depend>image_geometry</run_depend>
+  <run_depend>dynamic_reconfigure</run_depend>
   <run_depend>tf_conversions</run_depend>
   <run_depend>pykdl_utils</run_depend>
   <run_depend>ar_track_alvar</run_depend>

@@ -1,19 +1,18 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(hrl_pr2_ar_servo)
 # Load catkin and all dependencies required for this package
-find_package(catkin REQUIRED COMPONENTS image_geometry tf_conversions pykdl_utils ar_track_alvar)
+find_package(catkin REQUIRED COMPONENTS image_geometry dynamic_reconfigure tf_conversions pykdl_utils ar_track_alvar)
 find_package(OpenCV REQUIRED)
+
+generate_dynamic_reconfigure_options(
+    cfg/PR2ARServo.cfg
+)
 
 #uncomment if you have defined messages
 add_message_files(
   DIRECTORY msg
   FILES ARServoGoalData.msg
 )
-#uncomment if you have defined services
-
-rosbuild_find_ros_package(dynamic_reconfigure)
-include(${dynamic_reconfigure_PACKAGE_PATH}/cmake/cfgbuild.cmake)
-gencfg()
 
 ## Generate added messages and services with any dependencies listed here
 generate_messages(
@@ -21,12 +20,11 @@ generate_messages(
 )
 
 # catkin_package parameters: http://ros.org/doc/groovy/api/catkin/html/dev_guide/generated_cmake_api.html#catkin-package
-# TODO: fill in what other packages will need to use this package
 catkin_package(
-    DEPENDS pcl pcl_ros image_geometry tf_conversions pykdl_utils ar_pose
-    CATKIN_DEPENDS # TODO
-    INCLUDE_DIRS # TODO include
-    LIBRARIES # TODO
+    DEPENDS OpenCV
+    CATKIN_DEPENDS image_geometry dynamic_reconfigure tf_conversions pykdl_utils ar_track_alvar
+    INCLUDE_DIRS 
+    LIBRARIES 
 )
 
 include_directories(${catkin_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})

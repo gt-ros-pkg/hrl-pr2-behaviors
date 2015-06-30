@@ -8,9 +8,9 @@
 #include <image_geometry/pinhole_camera_model.h>
 #include <geometry_msgs/PoseStamped.h>
 
-#include <ar_track_alvar/ARMarker.h>
+#include <ar_track_alvar/AlvarMarkers.h>
 
-ar_track_alvar::ARMarker::Ptr ar_tag_l, ar_tag_r;
+ar_track_alvar::AlvarMarkers::Ptr ar_tag_l, ar_tag_r;
 ros::Subscriber ar_tag_l_sub, ar_tag_r_sub;
 double last_l_time, last_r_time;
 
@@ -20,27 +20,27 @@ image_geometry::PinholeCameraModel cam_model;
 boost::shared_ptr<tf::TransformListener> tf_list;
 cv_bridge::CvImagePtr cv_img;
 
-void subARTagLCallback(const ar_track_alvar::ARMarker::Ptr& ar_tag_)
+void subARTagLCallback(const ar_track_alvar::AlvarMarkers::Ptr& ar_tag_)
 {
     ar_tag_l = ar_tag_;
     last_l_time = ros::Time::now().toSec();
 }
 
-void subARTagRCallback(const ar_track_alvar::ARMarker::Ptr& ar_tag_)
+void subARTagRCallback(const ar_track_alvar::AlvarMarkers::Ptr& ar_tag_)
 {
     ar_tag_r = ar_tag_;
     last_r_time = ros::Time::now().toSec();
 }
 
-void writeTag(const ar_track_alvar::ARMarker::Ptr& ar_tag, const sensor_msgs::ImageConstPtr& img_msg,
+void writeTag(const ar_track_alvar::AlvarMarkers::Ptr& ar_tags, const sensor_msgs::ImageConstPtr& img_msg,
               const cv::Scalar& color)
 {
-    if(!tf_list->waitForTransform(img_msg->header.frame_id, ar_tag->header.frame_id,
+    if(!tf_list->waitForTransform(img_msg->header.frame_id, ar_tags->header.frame_id,
                                  img_msg->header.stamp, ros::Duration(3)))
         return;
     geometry_msgs::PoseStamped ar_tag_pose, ar_tag_tf;
-    ar_tag_pose.header = ar_tag->header;
-    ar_tag_pose.pose = ar_tag->pose.pose;
+    ar_tag_pose.header = ar_tags->header;
+    ar_tag_pose.pose = ar_tags->markers[0].pose.pose;
     tf_list->transformPose(img_msg->header.frame_id, ar_tag_pose, ar_tag_tf);
 
     double marker_width;
@@ -51,11 +51,10 @@ void writeTag(const ar_track_alvar::ARMarker::Ptr& ar_tag, const sensor_msgs::Im
     tf::poseMsgToTF(ar_tag_tf.pose, tf_pose);
     for(int i=0;i<2;i++) {
         for(int j=0;j<2;j++) {
-            btVector4 tag_pt;
+            tf::Vector3 tag_pt;
             tag_pt.setX(i * marker_width - marker_width/2.);
             tag_pt.setY(j * marker_width - marker_width/2.);
             tag_pt.setZ(0);
-            tag_pt.setW(1);
             tf::Vector3 tag_pt_rot = tf_pose * tag_pt;
             cv::Point3d proj_pt_cv(tag_pt_rot.getX(), tag_pt_rot.getY(), tag_pt_rot.getZ());
             cv_pts.push_back(cam_model.project3dToPixel(proj_pt_cv));
