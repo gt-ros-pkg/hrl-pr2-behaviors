@@ -1,0 +1,60 @@
+<package>
+  <name>hrl_pr2_arms</name>
+  <version>0.0.0</version>
+  <description>Python class to control the PR2 arms using an equilibrium control framework.</description>
+  <maintainer email="">Kelsey Hawkins</maintainer>
+  <maintainer email="">Advisor: Prof. Charlie Kemp</maintainer>
+  <maintainer email="">Lab: Healthcare Robotics Lab </maintainer>
+
+  <license>New BSD</license>
+
+  <url type="website">http://ros.org/wiki/hrl_pr2_arms</url>
+  <!-- <url type="bugtracker"></url> -->
+
+  <author>Kelsey Hawkins</author>
+  <author>Advisor: Prof. Charlie Kemp</author>
+  <author>Lab: Healthcare Robotics Lab </author>
+
+  <!-- Dependencies which this package needs to build itself. -->
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <!-- Dependencies needed to compile this package. -->
+  <build_depend>rospy</build_depend>
+  <build_depend>visualization_msgs</build_depend>
+  <build_depend>pr2_controllers_msgs</build_depend>
+  <build_depend>actionlib</build_depend>
+  <build_depend>rosparam</build_depend>
+  <build_depend>trajectory_msgs</build_depend>
+  <build_depend>pr2_mechanism_msgs</build_depend>
+  <build_depend>object_manipulation_msgs</build_depend>
+  <build_depend>robot_mechanism_controllers</build_depend>
+  <build_depend>pr2_manipulation_controllers</build_depend>
+  <build_depend>pykdl_utils</build_depend>
+
+  <!-- Dependencies needed after this package is compiled. -->
+  <run_depend>rospy</run_depend>
+  <run_depend>visualization_msgs</run_depend>
+  <run_depend>pr2_controllers_msgs</run_depend>
+  <run_depend>actionlib</run_depend>
+  <run_depend>rosparam</run_depend>
+  <run_depend>trajectory_msgs</run_depend>
+  <run_depend>pr2_mechanism_msgs</run_depend>
+  <run_depend>object_manipulation_msgs</run_depend>
+  <run_depend>robot_mechanism_controllers</run_depend>
+  <run_depend>pr2_manipulation_controllers</run_depend>
+  <run_depend>pykdl_utils</run_depend>
+
+  <!-- Dependencies needed only for running tests. -->
+  <!-- <test_depend>rospy</test_depend> -->
+  <!-- <test_depend>visualization_msgs</test_depend> -->
+  <!-- <test_depend>pr2_controllers_msgs</test_depend> -->
+  <!-- <test_depend>actionlib</test_depend> -->
+  <!-- <test_depend>rosparam</test_depend> -->
+  <!-- <test_depend>trajectory_msgs</test_depend> -->
+  <!-- <test_depend>pr2_mechanism_msgs</test_depend> -->
+  <!-- <test_depend>object_manipulation_msgs</test_depend> -->
+  <!-- <test_depend>robot_mechanism_controllers</test_depend> -->
+  <!-- <test_depend>pr2_manipulation_controllers</test_depend> -->
+  <!-- <test_depend>pykdl_utils</test_depend> -->
+
+</package>
