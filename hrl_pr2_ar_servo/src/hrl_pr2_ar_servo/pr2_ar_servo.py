@@ -6,6 +6,7 @@ from collections import deque
 
 import roslib
 roslib.load_manifest('hrl_pr2_ar_servo')
+roslib.load_manifest('ar_track_alvar')
 
 import rospy
 from geometry_msgs.msg import Twist
@@ -18,7 +19,8 @@ from hrl_geom.pose_converter import PoseConv
 from pid_controller import PIDController
 from pykdl_utils.joint_kinematics import create_joint_kin
 
-from ar_pose.msg import ARMarker
+from ar_track_alvar.msg import AlvarMarkers
+
 
 class ServoKalmanFilter(object):
     # TODO tune these parameters properly
@@ -109,8 +111,8 @@ def create_base_marker(pose, id, color):
     return marker
 
 class PR2ARServo(object):
-    def __init__(self, ar_topic):
-        self.ar_sub = rospy.Subscriber(ar_topic, ARMarker, self.ar_sub)
+    def __init__(self, ar_topic):            
+        self.ar_sub = rospy.Subscriber(ar_topic, AlvarMarkers, self.ar_sub)   #changed to use Alvar markers instead of ar pose markers
         self.mkr_pub = rospy.Publisher("visualization_marker", Marker)
 
         self.cur_ar_pose = None
@@ -124,7 +126,8 @@ class PR2ARServo(object):
             self.kin_arm = create_joint_kin(base_link="base_link", 
                                             end_link=msg.header.frame_id)
         base_B_camera = self.kin_arm.forward()
-        camera_B_tag = PoseConv.to_homo_mat(msg.pose.pose)
+        camera_B_tag = PoseConv.to_homo_mat(msg.markers[0].pose.pose) #changed to use Alvar Markers
+             
         cur_ar_pose = base_B_camera * camera_B_tag
         # check to see if the tag is in front of the robot
         if cur_ar_pose[0,3] < 0.:
@@ -157,7 +160,7 @@ class PR2ARServo(object):
         self.base_pub.publish(Twist())
 
     def find_ar_tag(self, timeout=None):
-        rate = 8.
+        rate = 3#8.
         sigma_thresh = [0.05, 0.01, 0.08]
         new_obs_mean_thresh = 0.5
         r = rospy.Rate(rate)
@@ -190,6 +193,7 @@ class PR2ARServo(object):
                 # see if we have a low variance tag
                 if len(ar_2d_queue) == ar_2d_queue.maxlen:
                     ar_sigma = np.std(ar_2d_queue, 0)
+                    
                     new_obs_mean = np.mean(new_obs_queue, 0)
                     print "AR Tag Sigma:", ar_sigma, " / ", sigma_thresh
                     print "Data Freshness: ", new_obs_mean, " / ", new_obs_mean_thresh
@@ -253,9 +257,10 @@ class PR2ARServo(object):
                 x_filt_err, x_filt_cov, x_unreli = kf_x.update(ar_err[0], new_obs=new_obs)
                 y_filt_err, y_filt_cov, y_unreli = kf_y.update(ar_err[1], new_obs=new_obs)
                 r_filt_err, r_filt_cov, r_unreli = kf_r.update(ar_err[2], new_obs=new_obs)
-
-                if np.any(np.array([x_unreli, y_unreli, r_unreli]) > [lost_tag_thresh]*3):
+                print ([x_unreli, y_unreli, r_unreli])
+                if np.any(np.array([x_unreli, y_unreli, r_unreli]) > [lost_tag_thresh*3]): #moved the bracket to the right to be around the 3
                     self.base_pub.publish(Twist())
+                    print "Why is this here.....???"                    
                     return 'lost_tag'
 
                 print "Noise:", x_unreli, y_unreli, r_unreli
@@ -283,7 +288,6 @@ class PR2ARServo(object):
                 if np.all(np.fabs(cur_filt_err) < goal_error):
                     self.base_pub.publish(Twist())
                     return 'succeeded'
-
                 self.base_pub.publish(base_twist)
 
             r.sleep()
