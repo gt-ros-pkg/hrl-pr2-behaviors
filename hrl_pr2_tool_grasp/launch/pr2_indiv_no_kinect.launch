@@ -2,8 +2,6 @@
 	<arg name="marker_size" default="2.9" />
 	<arg name="max_new_marker_error" default="0.04" />
 	<arg name="max_track_error" default="0.1" />
-	<!--arg name="cam_image_topic" default="/prosilica/image_rect_color" />
-	<arg name="cam_info_topic" default="/prosilica/camera_info" /-->	
 	<arg name="cam_image_topic" default="/r_forearm_cam/image_rect_color" />
 	<arg name="cam_info_topic" default="/r_forearm_cam/camera_info" />	
 	<arg name="output_frame" default="/torso_lift_link" />
