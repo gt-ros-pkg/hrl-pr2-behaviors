@@ -1,12 +1,9 @@
 #!/usr/bin/env python
 
-import sys
-
 from collections import deque
 from copy import copy
 import numpy as np
 
-import roslib; roslib.load_manifest('ar_tool_grasp')
 import rospy
 import actionlib
 from geometry_msgs.msg import PoseStamped, Point, Quaternion
@@ -17,36 +14,45 @@ from ar_track_alvar.msg import AlvarMarkers
 
 from ar_tool_grasp.msg import ARToolGraspAction, ARToolGraspFeedback, ARToolGraspResult
 
+
 class ARTagGraspAction(object):
     def __init__(self, tag_pose_window=1.0, progress_timeout=5.,
                  setup_transform=None, grasp_transform=None):
-        #TODO: GET ALL THE MAGIC NUMBERS INTO PARAMETERS
-        #TODO: Collect all magic strings into parameters
+        # TODO: GET ALL THE MAGIC NUMBERS INTO PARAMETERS
+        # TODO: Collect all magic strings into parameters
         self.tag_pose_window = rospy.Duration(tag_pose_window)
         self.progress_timeout = rospy.Duration(progress_timeout)
         self.setup_transform = setup_transform if setup_transform is not None else [0]*6
         self.grasp_transform = grasp_transform if grasp_transform is not None else [0]*6
 
         self.gripper_pose = None
-        self.gripper_pose_sub = rospy.Subscriber('haptic_mpc/gripper_pose', PoseStamped, self.pose_cb)
+        self.gripper_pose_sub = rospy.Subscriber('haptic_mpc/gripper_pose',
+                                                 PoseStamped,
+                                                 self.pose_cb)
 
         self.tag_poses = {}
-        self.tag_sub = rospy.Subscriber('ar_pose_marker', AlvarMarkers, self.tag_pose_cb)
+        self.tag_sub = rospy.Subscriber('ar_pose_marker',
+                                        AlvarMarkers,
+                                        self.tag_pose_cb)
 
         self.goal_pose_pub = rospy.Publisher('haptic_mpc/goal_pose', PoseStamped)
         self.test_pub_1 = rospy.Publisher('test_pose_1', PoseStamped, latch=True)
         self.test_pub_2 = rospy.Publisher('test_pose_2', PoseStamped, latch=True)
         self.last_pos_err = self.last_ort_err = np.inf
         self.last_progress_time = rospy.Time.now()
-        self.gripper_ac = actionlib.SimpleActionClient('l_gripper_controller/gripper_action', Pr2GripperCommandAction)
+        self.gripper_ac = actionlib.SimpleActionClient('l_gripper_controller/gripper_action',
+                                                       Pr2GripperCommandAction)
         rospy.loginfo("[%s] Waiting for gripper action server" %(rospy.get_name()))
         if self.gripper_ac.wait_for_server(rospy.Duration(10.0)):
             rospy.loginfo("[%s] Gripper action server started" %(rospy.get_name()))
         else:
             rospy.logerr("[%s] Gripper action server not found" %(rospy.get_name()))
-        self.action_server = actionlib.SimpleActionServer('ar_tool_grasp_action', ARToolGraspAction, self.grasp_cb, False)
+        self.action_server = actionlib.SimpleActionServer('ar_tool_grasp_action',
+                                                          ARToolGraspAction,
+                                                          self.grasp_cb,
+                                                          False)
         self.action_server.start()
-        rospy.loginfo("[%s] AR Tool Grasp Action Server Started" %(rospy.get_name()))
+        rospy.loginfo("[%s] AR Tool Grasp Action Server Started" % (rospy.get_name()))
 
     def pose_cb(self, ps_msg):
         self.gripper_pose = ps_msg
@@ -272,7 +278,8 @@ class ARTagGraspAction(object):
             rospy.loginfo(msg)
             self.action_server.set_succeeded(result, text=msg)
 
-if __name__=='__main__':
+
+def main():
     import argparse
     parser = argparse.ArgumentParser(description="A node for grasping a tool handle marked with an AR Tag",
                                      formatter_class = argparse.ArgumentDefaultsHelpFormatter)
@@ -294,5 +301,3 @@ if __name__=='__main__':
                                     setup_transform=args.setup_transform,
                                     grasp_transform=args.grasp_transform)
     rospy.spin()
-
-
