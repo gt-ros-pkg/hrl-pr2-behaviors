@@ -1,10 +1,6 @@
 #include <ros/ros.h>
 
 #include <tf/transform_listener.h>
-#include <pcl/point_cloud.h>
-#include <pcl/point_types.h>
-#include <pcl_ros/point_cloud.h>
-#include <pcl_ros/transforms.h>
 #include <cv_bridge/cv_bridge.h>
 #include <opencv/cv.h>
 #include <sensor_msgs/image_encodings.h>
@@ -12,12 +8,9 @@
 #include <image_geometry/pinhole_camera_model.h>
 #include <geometry_msgs/PoseStamped.h>
 
-#include <ar_pose/ARMarker.h>
+#include <ar_track_alvar/ARMarker.h>
 
-typedef pcl::PointXYZRGB PRGB;
-typedef pcl::PointCloud<PRGB> PCRGB;
-
-ar_pose::ARMarker::Ptr ar_tag_l, ar_tag_r;
+ar_track_alvar::ARMarker::Ptr ar_tag_l, ar_tag_r;
 ros::Subscriber ar_tag_l_sub, ar_tag_r_sub;
 double last_l_time, last_r_time;
 
@@ -27,19 +20,19 @@ image_geometry::PinholeCameraModel cam_model;
 boost::shared_ptr<tf::TransformListener> tf_list;
 cv_bridge::CvImagePtr cv_img;
 
-void subARTagLCallback(const ar_pose::ARMarker::Ptr& ar_tag_)
+void subARTagLCallback(const ar_track_alvar::ARMarker::Ptr& ar_tag_)
 {
     ar_tag_l = ar_tag_;
     last_l_time = ros::Time::now().toSec();
 }
 
-void subARTagRCallback(const ar_pose::ARMarker::Ptr& ar_tag_)
+void subARTagRCallback(const ar_track_alvar::ARMarker::Ptr& ar_tag_)
 {
     ar_tag_r = ar_tag_;
     last_r_time = ros::Time::now().toSec();
 }
 
-void writeTag(const ar_pose::ARMarker::Ptr& ar_tag, const sensor_msgs::ImageConstPtr& img_msg,
+void writeTag(const ar_track_alvar::ARMarker::Ptr& ar_tag, const sensor_msgs::ImageConstPtr& img_msg,
               const cv::Scalar& color)
 {
     if(!tf_list->waitForTransform(img_msg->header.frame_id, ar_tag->header.frame_id,

@@ -1,24 +1,20 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 import numpy as np
 import functools
 from threading import Thread
-import copy
 
 import roslib
 roslib.load_manifest('hrl_pr2_ar_servo')
 roslib.load_manifest('smach_ros')
-#roslib.load_manifest('costmap_services')
 import rospy
 import smach
-import smach_ros
-from std_msgs.msg import Bool, Int8, String
+from std_msgs.msg import Bool, Int8
 from geometry_msgs.msg import PoseStamped
 from tf import transformations as tft
 import tf
 
 from pykdl_utils.joint_kinematics import create_joint_kin
-#from costmap_services.python_client import CostmapServices
 from pr2_ar_servo import PR2ARServo
 
 from hrl_pr2_ar_servo.msg import ARServoGoalData
@@ -68,7 +64,7 @@ class ArmCollisionDetection(smach.State):
                 print "Collision detected on right arm with torque:", r_tor
                 print "Minimum torques:", self.max_r_tor
                 return 'collision'
-                
+
             if self.preempt_requested():
                 self.service_preempt()
                 return 'preempted'

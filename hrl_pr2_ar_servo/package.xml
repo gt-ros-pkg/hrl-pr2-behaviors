@@ -18,19 +18,15 @@
   <buildtool_depend>catkin</buildtool_depend>
 
   <!-- Dependencies needed to compile this package. -->
-  <build_depend>pcl</build_depend>
-  <build_depend>pcl_ros</build_depend>
   <build_depend>image_geometry</build_depend>
   <build_depend>tf_conversions</build_depend>
   <build_depend>pykdl_utils</build_depend>
-  <build_depend>ar_pose</build_depend>
+  <build_depend>ar_track_alvar</build_depend>
 
   <!-- Dependencies needed after this package is compiled. -->
-  <run_depend>pcl</run_depend>
-  <run_depend>pcl_ros</run_depend>
   <run_depend>image_geometry</run_depend>
   <run_depend>tf_conversions</run_depend>
   <run_depend>pykdl_utils</run_depend>
-  <run_depend>ar_pose</run_depend>
+  <run_depend>ar_track_alvar</run_depend>
 
 </package>

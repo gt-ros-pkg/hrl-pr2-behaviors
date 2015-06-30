@@ -80,7 +80,7 @@ class ServoKalmanFilter(object):
         # find the unreli level
         # this value [0, 1] is a record of the values which have been determined to be unreli
         # in the pase few seconds filtered with linear weights
-        # a value of 0 means there are no unreliable estimates, 
+        # a value of 0 means there are no unreliable estimates,
         # 1 means there is no reliable state estimate
         if len(self.unreli_queue) == self.unreli_queue.maxlen:
             unreli_level = np.sum(self.unreli_weights * self.unreli_queue) / self.unreli_queue.maxlen
@@ -111,7 +111,7 @@ def create_base_marker(pose, id, color):
     return marker
 
 class PR2ARServo(object):
-    def __init__(self, ar_topic):            
+    def __init__(self, ar_topic):
         self.ar_sub = rospy.Subscriber(ar_topic, AlvarMarkers, self.ar_sub)   #changed to use Alvar markers instead of ar pose markers
         self.mkr_pub = rospy.Publisher("visualization_marker", Marker)
 
@@ -123,11 +123,11 @@ class PR2ARServo(object):
 
     def ar_sub(self, msg):
         if self.kin_arm == None:
-            self.kin_arm = create_joint_kin(base_link="base_link", 
+            self.kin_arm = create_joint_kin(base_link="base_link",
                                             end_link=msg.header.frame_id)
         base_B_camera = self.kin_arm.forward()
         camera_B_tag = PoseConv.to_homo_mat(msg.markers[0].pose.pose) #changed to use Alvar Markers
-             
+
         cur_ar_pose = base_B_camera * camera_B_tag
         # check to see if the tag is in front of the robot
         if cur_ar_pose[0,3] < 0.:
@@ -170,7 +170,7 @@ class PR2ARServo(object):
         end_time = (rospy.get_time() + timeout) if timeout is not None else None
         while True:
             if end_time is not None and rospy.get_time() > end_time:
-                rospy.logwarn("[pr2_viz_servo] find_ar_tag timed out, current ar_sigma: " + 
+                rospy.logwarn("[pr2_viz_servo] find_ar_tag timed out, current ar_sigma: " +
                               str(np.std(ar_2d_queue, 0)) +
                               " sigma_thresh: " +
                               str(sigma_thresh))
@@ -193,7 +193,7 @@ class PR2ARServo(object):
                 # see if we have a low variance tag
                 if len(ar_2d_queue) == ar_2d_queue.maxlen:
                     ar_sigma = np.std(ar_2d_queue, 0)
-                    
+
                     new_obs_mean = np.mean(new_obs_queue, 0)
                     print "AR Tag Sigma:", ar_sigma, " / ", sigma_thresh
                     print "Data Freshness: ", new_obs_mean, " / ", new_obs_mean_thresh
@@ -260,13 +260,13 @@ class PR2ARServo(object):
                 print ([x_unreli, y_unreli, r_unreli])
                 if np.any(np.array([x_unreli, y_unreli, r_unreli]) > [lost_tag_thresh*3]): #moved the bracket to the right to be around the 3
                     self.base_pub.publish(Twist())
-                    print "Why is this here.....???"                    
+                    print "Why is this here.....???"
                     return 'lost_tag'
 
                 print "Noise:", x_unreli, y_unreli, r_unreli
                 # TODO REMOVE
                 #ma = Float32MultiArray()
-                #ma.data = [x_filt_err[0,0], x_filt_err[1,0], ar_err[0], 
+                #ma.data = [x_filt_err[0,0], x_filt_err[1,0], ar_err[0],
                 #           x_unreli, y_unreli, r_unreli]
                 #err_pub.publish(ma)
 
@@ -283,7 +283,7 @@ class PR2ARServo(object):
                 base_twist.angular.z = r_ctrl
                 cur_filt_err = np.array([x_filt_err[0,0], y_filt_err[0,0], r_filt_err[0,0]])
                 print "err", ar_err
-                print "Err filt", cur_filt_err 
+                print "Err filt", cur_filt_err
                 print "Twist:", base_twist
                 if np.all(np.fabs(cur_filt_err) < goal_error):
                     self.base_pub.publish(Twist())
