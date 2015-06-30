@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import rospy
-
 from dynamic_reconfigure.server import Server
 from hrl_pr2_ar_servo.cfg import PR2ARServoConfig
 
@@ -14,8 +13,7 @@ def callback(config, level):
         rospy.set_param(NODE_NAME+'/'+param, config[param])
     return config
 
-if __name__ == "__main__":
+def main():
     rospy.init_node("ar_servo_config")
-
     srv = Server(PR2ARServoConfig, callback)
     rospy.spin()

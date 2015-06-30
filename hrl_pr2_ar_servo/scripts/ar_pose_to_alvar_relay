@@ -1,0 +1,6 @@
+#!/usr/bin/env python
+
+from hrl_pr2_ar_servo import ar_pose_to_alvar_relay
+
+if __name__ == '__main__':
+    ar_pose_to_alvar_relay.main()

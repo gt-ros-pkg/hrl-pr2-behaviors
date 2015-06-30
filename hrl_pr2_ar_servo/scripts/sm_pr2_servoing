@@ -1,0 +1,6 @@
+#!/usr/bin/env python
+
+from hrl_pr2_ar_servo import sm_pr2_servoing
+
+if __name__ == '__main__':
+    sm_pr2_servoing.main()

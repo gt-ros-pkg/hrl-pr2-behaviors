@@ -4,6 +4,8 @@ project(hrl_pr2_ar_servo)
 find_package(catkin REQUIRED COMPONENTS image_geometry dynamic_reconfigure tf_conversions pykdl_utils ar_track_alvar)
 find_package(OpenCV REQUIRED)
 
+catkin_python_setup()
+
 generate_dynamic_reconfigure_options(
     cfg/PR2ARServo.cfg
 )
@@ -35,8 +37,15 @@ add_executable(ar_servo_image_proc src/ar_servo_image_proc.cpp)
 target_link_libraries(ar_confirm ${catkin_LIBRARIES} ${OpenCV_INCLUDE_DIRS})
 target_link_libraries(ar_servo_image_proc ${catkin_LIBRARIES} ${OpenCV_INCLUDE_DIRS})
 
+catkin_install_python(PROGRAMS 
+    scripts/ar_pose_to_alvar_relay
+    scripts/servo_config
+    scripts/pr2_ar_servo
+    scripts/sm_pr2_servoing
+    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+
 install(TARGETS ar_confirm ar_servo_image_proc
         RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 install(DIRECTORY launch/
-        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
+        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch)

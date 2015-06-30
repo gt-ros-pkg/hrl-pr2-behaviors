@@ -1,27 +1,31 @@
-import roslib; roslib.load_manifest('hrl_pr2_arms')
+#!/usr/bin/env python
+
 import rospy
 import rosparam
 import roslaunch.substitution_args
 
-from pr2_mechanism_msgs.srv import LoadController, UnloadController, SwitchController, ListControllers
+from pr2_mechanism_msgs.srv import (LoadController,
+                                    UnloadController,
+                                    SwitchController,
+                                    ListControllers)
 
 LOADED_ARM_CONTROLLERS = ['%s_arm_controller', '%s_cart']
 LOADED_CTRLS_PARAMS = {
-    'r' : "/controller_manager/loaded_ctrls/right_arm",
-    'l' : "/controller_manager/loaded_ctrls/left_arm",
+    'r': "/controller_manager/loaded_ctrls/right_arm",
+    'l': "/controller_manager/loaded_ctrls/left_arm",
 }
 
-##
-# Offers controller switching inside python on the fly.
+
 class ControllerSwitcher:
+    ''' Offers controller switching in python on the fly'''
     def __init__(self):
-        self.load_controller = rospy.ServiceProxy('pr2_controller_manager/load_controller', 
+        self.load_controller = rospy.ServiceProxy('pr2_controller_manager/load_controller',
                                                   LoadController)
-        self.unload_controller = rospy.ServiceProxy('pr2_controller_manager/unload_controller', 
+        self.unload_controller = rospy.ServiceProxy('pr2_controller_manager/unload_controller',
                                                     UnloadController)
-        self.switch_controller_srv = rospy.ServiceProxy('pr2_controller_manager/switch_controller', 
+        self.switch_controller_srv = rospy.ServiceProxy('pr2_controller_manager/switch_controller',
                                                         SwitchController)
-        self.list_controllers_srv = rospy.ServiceProxy('pr2_controller_manager/list_controllers', 
+        self.list_controllers_srv = rospy.ServiceProxy('pr2_controller_manager/list_controllers',
                                                        ListControllers)
         self.load_controller.wait_for_service()
         self.unload_controller.wait_for_service()
@@ -32,14 +36,16 @@ class ControllerSwitcher:
                 possible_ctrls = []
                 for ctrl in LOADED_ARM_CONTROLLERS:
                     possible_ctrls.append(ctrl % arm)
-                rosparam.set_param_raw(LOADED_CTRLS_PARAMS[arm], possible_ctrls)
+                rosparam.set_param_raw(LOADED_CTRLS_PARAMS[arm],
+                                       possible_ctrls)
         rospy.loginfo("[pr2_controller_switcher] ControllerSwitcher ready.")
 
     ##
     # Switches controller.
     # @param old_controller Name of controller to terminate.
-    # @param new_controller Name of controller to activate.  Can be same as old_controller
-    #                       if the object is to only change parameters.
+    # @param new_controller Name of controller to activate.
+    #  Can be same as old_controller if the object is
+    #  to only change parameters.
     # @param param_file YAML file containing parameters for the new controller.
     # @return Success of switch.
     def switch(self, old_controller, new_controller, param_file=None):
@@ -62,7 +68,8 @@ class ControllerSwitcher:
             return resp.ok
 
     ##
-    # Switches controller without having to specify the arm controller to take down.
+    # Switches controller without having to specify
+    # the arm controller to take down.
     # @param arm (r/l)
     # @param new_controller Name of new controller to load
     # @param param_file YAML file containing parameters for the new controller.
@@ -88,7 +95,7 @@ class ControllerSwitcher:
         check_arm_controllers = []
         for controller in possible_controllers:
             if '%s' in controller:
-                controller = controller % arm 
+                controller = controller % arm
             if controller[0] == arm:
                 check_arm_controllers.append(controller)
         resp = self.list_controllers_srv()
@@ -103,7 +110,7 @@ class ControllerSwitcher:
                         return True
                     self.switch_controller_srv([], [new_ctrl], 1)
                 self.unload_controller(new_ctrl)
-                
+
         self.load_controller(new_ctrl)
         rospy.loginfo("[pr2_controller_switcher] Starting controller %s" % (start_controllers[0]) +
                       " and stopping controllers: [" + ",".join(stop_controllers) + "]")

@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import numpy as np
-import functools
 from threading import Thread
 
 import roslib
@@ -19,7 +18,8 @@ from pr2_ar_servo import PR2ARServo
 
 from hrl_pr2_ar_servo.msg import ARServoGoalData
 
-OUTCOMES_SPA = ['succeeded','preempted','aborted']
+OUTCOMES_SPA = ['succeeded', 'preempted', 'aborted']
+
 
 class ServoStates:
     BEGIN_FIND_TAG = 1
@@ -32,9 +32,11 @@ class ServoStates:
     LOST_TAG = 8
     USER_PREEMPT = 9
 
+
 class ArmCollisionDetection(smach.State):
-    def __init__(self, min_l_torques=[-5.]*7, min_r_torques=[-5.]*7,
-                       max_l_torques=[5.]*7, max_r_torques=[5.]*7):
+    def __init__(self,
+                 min_l_torques=[-5.]*7, min_r_torques=[-5.]*7,
+                 max_l_torques=[5.]*7, max_r_torques=[5.]*7):
         smach.State.__init__(self, outcomes=['collision', 'preempted', 'aborted'])
         self.min_l_tor = np.array(min_l_torques)
         self.min_r_tor = np.array(min_r_torques)
@@ -71,24 +73,25 @@ class ArmCollisionDetection(smach.State):
             r.sleep()
         return 'aborted'
 
-#class LaserCollisionDetection(smach.State):
+# class LaserCollisionDetection(smach.State):
 #    def __init__(self):
-#        smach.State.__init__(self, outcomes=['collision', 'preempted', 'aborted'])
-#        self.cs = CostmapServices(accum=3)
+#         smach.State.__init__(self, outcomes=['collision', 'preempted', 'aborted'])
+#         self.cs = CostmapServices(accum=3)
 #
-#    def execute(self, userdata):
-#        r = rospy.Rate(20)
-#        while not rospy.is_shutdown():
-#            vx, vy, vtheta = 0., 0., 0. #TODO REMOVE
-#            score = self.cs.scoreTraj_PosHyst(vx, vy, vtheta) # TODO
-#            if score < 0:
-#                print "Base laser detected a collision."
-#                return 'collision'
-#            if self.preempt_requested():
-#                self.service_preempt()
-#                return 'preempted'
-#            r.sleep()
-#        return 'aborted'
+#     def execute(self, userdata):
+#         r = rospy.Rate(20)
+#         while not rospy.is_shutdown():
+#             vx, vy, vtheta = 0., 0., 0. #TODO REMOVE
+#             score = self.cs.scoreTraj_PosHyst(vx, vy, vtheta) # TODO
+#             if score < 0:
+#                 print "Base laser detected a collision."
+#                 return 'collision'
+#             if self.preempt_requested():
+#                 self.service_preempt()
+#                 return 'preempted'
+#             r.sleep()
+#         return 'aborted'
+
 
 class BoolTopicState(smach.State):
     def __init__(self, topic, rate=20):
@@ -115,6 +118,7 @@ class BoolTopicState(smach.State):
             r.sleep()
         return 'aborted'
 
+
 class PublishState(smach.State):
     def __init__(self, topic, msg_type, msg):
         smach.State.__init__(self, outcomes=['succeeded'])
@@ -124,6 +128,7 @@ class PublishState(smach.State):
     def execute(self, userdata):
         self.pub.publish(self.msg)
         return 'succeeded'
+
 
 class FindARTagState(smach.State):
     """ A Smach State for finding an AR Tag in a given camera topic. """
@@ -353,7 +358,7 @@ class ServoSMManager(object):
         rospy.loginfo("[%s] Started new servo state machine." % rospy.get_name())
 
 
-if __name__ == "__main__":
+def main():
     rospy.init_node("sm_pr2_servoing")
     find_tag_timeout = None
     servo_manager = ServoSMManager(find_tag_timeout)

@@ -1,0 +1,6 @@
+#! /usr/bin/python
+
+from hrl_pr2_arms import carefree_switch_controller
+
+if __name__ == "__main__":
+    carefree_switch_controller.main()

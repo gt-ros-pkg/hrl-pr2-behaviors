@@ -25,7 +25,6 @@
   <build_depend>pr2_mechanism_msgs</build_depend>
   <build_depend>manipulation_msgs</build_depend>
   <build_depend>robot_mechanism_controllers</build_depend>
-  <build_depend>pr2_manipulation_controllers</build_depend>
   <build_depend>pykdl_utils</build_depend>
 
   <!-- Dependencies needed after this package is compiled. -->
@@ -38,7 +37,6 @@
   <run_depend>pr2_mechanism_msgs</run_depend>
   <run_depend>manipulation_msgs</run_depend>
   <run_depend>robot_mechanism_controllers</run_depend>
-  <run_depend>pr2_manipulation_controllers</run_depend>
   <run_depend>pykdl_utils</run_depend>
 
 </package>

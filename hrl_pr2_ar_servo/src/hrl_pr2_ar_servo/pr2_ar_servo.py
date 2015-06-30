@@ -10,7 +10,6 @@ roslib.load_manifest('ar_track_alvar')
 
 import rospy
 from geometry_msgs.msg import Twist
-from std_msgs.msg import Float32MultiArray
 from visualization_msgs.msg import Marker
 from std_msgs.msg import ColorRGBA
 
@@ -203,14 +202,6 @@ class PR2ARServo(object):
 
     def servo_to_tag(self, pose_goal, goal_error=[0.03, 0.03, 0.1], initial_ar_pose=None):
         lost_tag_thresh = 0.6 #0.4
-
-        # TODO REMOVE
-#        err_pub = rospy.Publisher("servo_err", Float32MultiArray)
-#        if False:
-#            self.test_move()
-#            return "aborted"
-        #######################
-
         goal_ar_pose = homo_mat_from_2d(*pose_goal)
         rate = 8.
         kf_x = ServoKalmanFilter(delta_t=1./rate)
@@ -264,11 +255,6 @@ class PR2ARServo(object):
                     return 'lost_tag'
 
                 print "Noise:", x_unreli, y_unreli, r_unreli
-                # TODO REMOVE
-                #ma = Float32MultiArray()
-                #ma.data = [x_filt_err[0,0], x_filt_err[1,0], ar_err[0],
-                #           x_unreli, y_unreli, r_unreli]
-                #err_pub.publish(ma)
 
                 print "xerr"
                 print x_filt_err
@@ -305,6 +291,3 @@ def main():
         viz_servo.servo_to_tag((0.55761498778404717, -0.28816809195738824, 1.5722787397126308))
     else:
         print viz_servo.find_ar_tag(5)
-
-if __name__ == "__main__":
-    main()

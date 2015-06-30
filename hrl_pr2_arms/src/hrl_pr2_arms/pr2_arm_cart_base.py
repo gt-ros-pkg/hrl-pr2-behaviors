@@ -4,7 +4,7 @@
 #
 # Copyright (c) 2012, Georgia Tech Research Corporation
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #     * Redistributions of source code must retain the above copyright
@@ -15,7 +15,7 @@
 #     * Neither the name of the Georgia Tech Research Corporation nor the
 #       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY GEORGIA TECH RESEARCH CORPORATION ''AS IS'' AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -32,9 +32,6 @@
 import numpy as np
 import copy
 
-import roslib
-roslib.load_manifest('hrl_pr2_arms')
-
 import rospy
 from std_msgs.msg import Float64MultiArray
 from geometry_msgs.msg import PoseStamped
@@ -44,16 +41,16 @@ from hrl_geom.pose_converter import PoseConv
 import hrl_geom.transformations as trans
 
 def extract_twist(msg):
-    return np.array([msg.linear.x, msg.linear.y, msg.linear.z, 
+    return np.array([msg.linear.x, msg.linear.y, msg.linear.z,
                      msg.angular.x, msg.angular.y, msg.angular.z])
 
 ##
 # Base class for interacting with the Cartesian controllers on the PR2.
 # The equilibrium points are pose-like objects.
 class PR2ArmCartBase(EPArmBase):
-    def __init__(self, arm_side, urdf, base_link='torso_lift_link', end_link='%s_gripper_tool_frame', 
+    def __init__(self, arm_side, urdf, base_link='torso_lift_link', end_link='%s_gripper_tool_frame',
                  controller_name='/%s_cart', kdl_tree=None, timeout=1.):
-        super(PR2ArmCartBase, self).__init__(arm_side, urdf, base_link, end_link, 
+        super(PR2ArmCartBase, self).__init__(arm_side, urdf, base_link, end_link,
                                              controller_name, kdl_tree, timeout)
         self.command_pose_pub = rospy.Publisher(self.controller_name + '/command_pose', PoseStamped)
 
@@ -73,7 +70,7 @@ class PR2ArmCartBase(EPArmBase):
         pos_a, rot_a = ep_a
         pos_b, rot_b = ep_b
         num_samps = len(t_vals)
-        pos_waypoints = (np.array(pos_a) + 
+        pos_waypoints = (np.array(pos_a) +
                          np.array(np.tile(pos_b - pos_a, (1, num_samps))) * np.array(t_vals))
         pos_waypoints = [np.mat(pos).T for pos in pos_waypoints.T]
         rot_homo_a, rot_homo_b = np.eye(4), np.eye(4)
@@ -101,11 +98,11 @@ class PR2ArmCartBase(EPArmBase):
 # Class which extends the PR2ArmCartBase to provide functionality for changing the
 # posture.
 class PR2ArmCartPostureBase(PR2ArmCartBase):
-    def __init__(self, arm_side, urdf, base_link='torso_lift_link', end_link='%s_gripper_tool_frame', 
+    def __init__(self, arm_side, urdf, base_link='torso_lift_link', end_link='%s_gripper_tool_frame',
                  controller_name='/%s_cart', kdl_tree=None, timeout=1.):
-        super(PR2ArmCartPostureBase, self).__init__(arm_side, urdf, base_link, end_link, 
+        super(PR2ArmCartPostureBase, self).__init__(arm_side, urdf, base_link, end_link,
                                              controller_name, kdl_tree, timeout)
-        self.command_posture_pub = rospy.Publisher(self.controller_name + '/command_posture', 
+        self.command_posture_pub = rospy.Publisher(self.controller_name + '/command_posture',
                                                    Float64MultiArray)
 
     ##

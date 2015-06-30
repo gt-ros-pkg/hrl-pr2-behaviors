@@ -1,33 +1,8 @@
-# Catkin User Guide: http://www.ros.org/doc/groovy/api/catkin/html/user_guide/user_guide.html
-# Catkin CMake Standard: http://www.ros.org/doc/groovy/api/catkin/html/user_guide/standards.html
 cmake_minimum_required(VERSION 2.8.3)
 project(hrl_pr2_traj_playback)
 # Load catkin and all dependencies required for this package
-# TODO: remove all from COMPONENTS that are not catkin packages.
 find_package(catkin REQUIRED COMPONENTS std_srvs actionlib hrl_pr2_arms)
 
-# include_directories(include ${Boost_INCLUDE_DIR} ${catkin_INCLUDE_DIRS})
-# CATKIN_MIGRATION: removed during catkin migration
-# cmake_minimum_required(VERSION 2.4.6)
-
-# CATKIN_MIGRATION: removed during catkin migration
-# include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
-
-# Set the build type.  Options are:
-#  Coverage       : w/ debug symbols, w/o optimization, w/ code-coverage
-#  Debug          : w/ debug symbols, w/o optimization
-#  Release        : w/o debug symbols, w/ optimization
-#  RelWithDebInfo : w/ debug symbols, w/ optimization
-#  MinSizeRel     : w/o debug symbols, w/ optimization, stripped binaries
-#set(ROS_BUILD_TYPE RelWithDebInfo)
-
-rosbuild_find_ros_package(actionlib_msgs)
-include(${actionlib_msgs_PACKAGE_PATH}/cmake/actionbuild.cmake)
-genaction()
-
-
-# CATKIN_MIGRATION: removed during catkin migration
-# rosbuild_init()
 
 #set the default path for built executables to the "bin" directory
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
@@ -35,16 +10,16 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 #uncomment if you have defined messages
-add_message_files(
-  FILES
-  # TODO: List your msg files here
-)
+#add_message_files(
+#  FILES
+#  # TODO: List your msg files here
+#)
 #uncomment if you have defined services
 #add_service_files(
-  FILES
-  # TODO: List your msg files here
-)
-
+#  FILES
+#  # TODO: List your msg files here
+#)
+#
 #common commands for building c++ executables and libraries
 #add_library(${PROJECT_NAME} src/example.cpp)
 #target_link_libraries(${PROJECT_NAME} another_library)

@@ -5,7 +5,7 @@
 #
 # Copyright (c) 2012, Georgia Tech Research Corporation
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #     * Redistributions of source code must retain the above copyright
@@ -16,7 +16,7 @@
 #     * Neither the name of the Georgia Tech Research Corporation nor the
 #       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY GEORGIA TECH RESEARCH CORPORATION ''AS IS'' AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -31,11 +31,7 @@
 # Author: Kelsey Hawkins
 
 from threading import Lock
-import numpy as np
 import copy
-
-import roslib
-roslib.load_manifest('hrl_pr2_arms')
 
 import rospy
 
@@ -51,10 +47,10 @@ from pykdl_utils.joint_kinematics import JointKinematics
 class EPArmBase(JointKinematics):
     ##
     # Constructor
-    # @param arm_side Used to signify side of robot for similar arms 
+    # @param arm_side Used to signify side of robot for similar arms
     #                 (e.g. 'r' for right, 'l' for left)
     # @param urdf URDF object of robot.
-    # @param base_link Name of the root link of the kinematic chain. 
+    # @param base_link Name of the root link of the kinematic chain.
     #                  Will fill in arm_side if %s is in string.
     # @param end_link Name of the end link of the kinematic chain.
     #                 Will fill in arm_side if %s is in string.
@@ -63,7 +59,7 @@ class EPArmBase(JointKinematics):
     # @param kdl_tree Optional KDL.Tree object to use. If None, one will be generated
     #                          from the URDF.
     # @param timeout Time in seconds to wait for the /joint_states topic.
-    def __init__(self, arm_side, urdf, base_link, end_link, controller_name=None, 
+    def __init__(self, arm_side, urdf, base_link, end_link, controller_name=None,
                  kdl_tree=None, timeout=1.):
         if "%s" in base_link:
             base_link = base_link % arm_side
@@ -112,7 +108,7 @@ class EPArmBase(JointKinematics):
                     return True
             r.sleep()
         return False
-            
+
     ##
     # Returns the current state of the realtime controller. The state is filled in
     # by the subclasses.

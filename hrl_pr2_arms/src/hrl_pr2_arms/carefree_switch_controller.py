@@ -1,11 +1,9 @@
-#! /usr/bin/python
+#!/usr/bin/env python
 
 import sys
-
-import roslib; roslib.load_manifest("hrl_pr2_arms")
 import rospy
-
 from hrl_pr2_arms.pr2_controller_switcher import ControllerSwitcher
+
 
 def main():
     rospy.init_node("carefree_switch_controller", sys.argv)
@@ -20,6 +18,3 @@ def main():
         print cs.carefree_switch(sys.argv[1], sys.argv[2], param_path)
     else:
         print cs.carefree_switch(sys.argv[1], sys.argv[2])
-
-if __name__ == "__main__":
-    main()

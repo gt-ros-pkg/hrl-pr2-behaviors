@@ -4,7 +4,7 @@
 #
 # Copyright (c) 2012, Georgia Tech Research Corporation
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #     * Redistributions of source code must retain the above copyright
@@ -15,7 +15,7 @@
 #     * Neither the name of the Georgia Tech Research Corporation nor the
 #       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY GEORGIA TECH RESEARCH CORPORATION ''AS IS'' AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -32,31 +32,29 @@
 import numpy as np
 import copy
 
-import roslib
-roslib.load_manifest('hrl_pr2_arms')
-
 import rospy
 import actionlib
-from pr2_controllers_msgs.msg import JointTrajectoryAction, JointTrajectoryGoal 
-from pr2_controllers_msgs.msg import JointTrajectoryControllerState 
+from pr2_controllers_msgs.msg import JointTrajectoryAction, JointTrajectoryGoal
+from pr2_controllers_msgs.msg import JointTrajectoryControllerState
 from trajectory_msgs.msg import JointTrajectoryPoint
 
-from ep_arm_base import EPArmBase, create_ep_arm
+from ep_arm_base import EPArmBase
 
-##
-# Class for interacting with the JointTrajectory controller on the PR2.
-# Controller type: robot_mechanism_controllers/JointTrajectoryActionController
-# The equilibrium points are lists of joint angles.
+
 class PR2ArmJointTraj(EPArmBase):
-    def __init__(self, arm_side, urdf, base_link='torso_lift_link', end_link='%s_gripper_tool_frame', 
+    '''Class for interacting with the JointTrajectory controller on the PR2.
+        Controller type: robot_mechanism_controllers/JointTrajectoryActionController
+        The equilibrium points are lists of joint angles.
+    '''
+    def __init__(self, arm_side, urdf, base_link='torso_lift_link', end_link='%s_gripper_tool_frame',
                  controller_name='/%s_arm_controller', kdl_tree=None, timeout=1.):
-        super(PR2ArmJointTraj, self).__init__(arm_side, urdf, base_link, end_link, 
+        super(PR2ArmJointTraj, self).__init__(arm_side, urdf, base_link, end_link,
                                               controller_name, kdl_tree, timeout)
         self.joint_action_client = actionlib.SimpleActionClient(
                                        self.controller_name + '/joint_trajectory_action',
                                        JointTrajectoryAction)
 
-        self._state_sub = rospy.Subscriber(self.controller_name + '/state', 
+        self._state_sub = rospy.Subscriber(self.controller_name + '/state',
                                            JointTrajectoryControllerState, self._ctrl_state_cb)
         if self.wait_for_joint_angles(0):
             if not self.wait_for_ep(timeout):
@@ -88,7 +86,7 @@ class PR2ArmJointTraj(EPArmBase):
             return self.wrap_angles(ret_ep)
         else:
             return ret_ep
-            
+
     ##
     # Commands joint angles to a single position
     # @param jep List of joint params to command the the arm to reach
@@ -112,6 +110,6 @@ class PR2ArmJointTraj(EPArmBase):
     #               of ep_a to ep_b to place that point.
     # @return np.array of size len(t_vals)xlen(ep_*) trajectory.
     def interpolate_ep(self, ep_a, ep_b, t_vals):
-        linspace_list = [[ep_a[i] + (ep_b[i] - ep_a[i]) * t for t in t_vals] 
+        linspace_list = [[ep_a[i] + (ep_b[i] - ep_a[i]) * t for t in t_vals]
                          for i in range(len(ep_a))]
         return np.dstack(linspace_list)[0]

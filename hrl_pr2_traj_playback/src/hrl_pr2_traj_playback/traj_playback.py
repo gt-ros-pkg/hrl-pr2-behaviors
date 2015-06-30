@@ -29,11 +29,11 @@ PARAM_FILE_NONE = '$(find hrl_pr2_arms)/params/joint_traj_params_electric_none.y
 
 ##
 # Allows one to move the arm through a set of joint angles safely and controller
-# agnostic.  
+# agnostic.
 class TrajPlayback(object):
     ##
     # @param arm_char 'r' or 'l' to choose which arm to load
-    # @param ctrl_name name of the controller to load from the param_file 
+    # @param ctrl_name name of the controller to load from the param_file
     # @param param_file Location of the parameter file which specifies the controller
     #        (e.g. "$(find hrl_pr2_arms)/params/joint_traj_params_electric_low.yaml")
     def __init__(self, arm_char, ctrl_name="%s_arm_controller", param_file=None):
@@ -49,9 +49,9 @@ class TrajPlayback(object):
     ##
     # Switches controllers and returns an instance of the arm to control
     def load_arm(self):
-        self.ctrl_switcher.carefree_switch(self.arm_char, self.ctrl_name, 
+        self.ctrl_switcher.carefree_switch(self.arm_char, self.ctrl_name,
                                            self.param_file, reset=False)
-        return create_ep_arm(self.arm_char, PR2ArmJointTraj, 
+        return create_ep_arm(self.arm_char, PR2ArmJointTraj,
                              controller_name=self.ctrl_name, timeout=8)
 
     ##
@@ -194,7 +194,7 @@ def load_arm_file(filename):
         print "Error:", e
         return None, None, None
 
-def move_to_setup_from_file(filename, ctrl_name=CTRL_NAME_LOW, param_file=PARAM_FILE_LOW, 
+def move_to_setup_from_file(filename, ctrl_name=CTRL_NAME_LOW, param_file=PARAM_FILE_LOW,
                             velocity=0.1, rate=RATE, reverse=False, blocking=True):
     traj, arm_char, rate = load_arm_file(filename)
     if traj is None:
@@ -206,7 +206,7 @@ def move_to_setup_from_file(filename, ctrl_name=CTRL_NAME_LOW, param_file=PARAM_
     traj_ctrl = TrajPlayback(arm_char, ctrl_name, param_file)
     traj_ctrl.load_arm()
     rospy.sleep(0.1)
-    traj_ctrl.move_to_angles(q, velocity=velocity, 
+    traj_ctrl.move_to_angles(q, velocity=velocity,
                              rate=rate, blocking=blocking)
 
 def can_exec_traj_from_file(filename, reverse=False):
@@ -218,7 +218,7 @@ def can_exec_traj_from_file(filename, reverse=False):
     rospy.sleep(0.1)
     return traj_ctrl.can_exec_traj(traj)
 
-def exec_traj_from_file(filename, ctrl_name=CTRL_NAME_LOW, param_file=PARAM_FILE_LOW, 
+def exec_traj_from_file(filename, ctrl_name=CTRL_NAME_LOW, param_file=PARAM_FILE_LOW,
                         reverse=False, rate_mult=0.8, blocking=True):
     traj, arm_char, rate = load_arm_file(filename)
     if traj is None:
@@ -338,7 +338,7 @@ class TrajectoryServer(object):
             self.traj_srv.set_aborted(text="Unknown goal mode.")
             return
         if self.traj_ctrl.execute(full_traj, rate * goal.traj_rate_mult, blocking=True):
-            self.publish_feedback("Trajectory playback on the %s arm successful." % 
+            self.publish_feedback("Trajectory playback on the %s arm successful." %
                                   self.arm_dict[self.traj_ctrl.arm_char])
         self.traj_srv.set_succeeded()
 
@@ -370,13 +370,13 @@ def main():
                  help="Controller to run the playback with.")
     p.add_option('-p', '--params', dest="param_file", default=None, #PARAM_FILE_LOW,
                  help="YAML file to save parameters in or load from.")
-    p.add_option('-v', '--srv_mode', dest="srv_mode", 
+    p.add_option('-v', '--srv_mode', dest="srv_mode",
                  action="store_true", default=False,
                  help="Server mode.")
-    p.add_option('-y', '--playback_mode', dest="playback_mode", 
+    p.add_option('-y', '--playback_mode', dest="playback_mode",
                  action="store_true", default=False,
                  help="Plays back trajectory immediately.")
-    p.add_option('-z', '--reverse', dest="reverse", 
+    p.add_option('-z', '--reverse', dest="reverse",
                  action="store_true", default=False,
                  help="Plays back trajectory in reverse.")
     (opts, args) = p.parse_args()
@@ -417,7 +417,7 @@ def main():
             print "FIX"
             return
     elif opts.srv_mode:
-        traj_srv = TrajectoryServer(arm_char, "/trajectory_playback_" + arm_char, 
+        traj_srv = TrajectoryServer(arm_char, "/trajectory_playback_" + arm_char,
                                     opts.ctrl_name, opts.param_file)
         rospy.spin()
         return

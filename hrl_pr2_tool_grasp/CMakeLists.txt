@@ -4,7 +4,6 @@ find_package(catkin REQUIRED COMPONENTS rospy ar_track_alvar actionlib actionlib
 
 catkin_python_setup()
 
-#uncomment if you have defined messages
 add_action_files(
   DIRECTORY action
   FILES ARToolGrasp.action
@@ -25,4 +24,4 @@ catkin_install_python(PROGRAMS scripts/ar_tool_grasp_server scripts/ar_tool_gras
                         DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 install(DIRECTORY launch/
-        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
+        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch)

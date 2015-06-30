@@ -4,7 +4,7 @@
 #
 # Copyright (c) 2012, Georgia Tech Research Corporation
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #     * Redistributions of source code must retain the above copyright
@@ -15,7 +15,7 @@
 #     * Neither the name of the Georgia Tech Research Corporation nor the
 #       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY GEORGIA TECH RESEARCH CORPORATION ''AS IS'' AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -31,27 +31,24 @@
 
 import numpy as np
 
-import roslib
-roslib.load_manifest('hrl_pr2_arms')
-
 import rospy
 from robot_mechanism_controllers.msg import JTCartesianControllerState
 
-from ep_arm_base import EPArmBase, create_ep_arm
 from pr2_arm_cart_base import PR2ArmCartPostureBase, extract_twist
 from hrl_geom.pose_converter import PoseConv
-import hrl_geom.transformations as trans
 
-##
-# Class for interacting with the Cartesian controllers on the PR2.
-# Controller type: robot_mechanism_controllers/JTCartesianController
-# The equilibrium points are pose-like objects.
+
 class PR2ArmJTranspose(PR2ArmCartPostureBase):
-    def __init__(self, arm_side, urdf, base_link='torso_lift_link', end_link='%s_gripper_tool_frame', 
+    ''' Class for interacting with the Cartesian controllers on the PR2.
+    Controller type: robot_mechanism_controllers/JTCartesianController
+    The equilibrium points are pose-like objects.
+    '''
+
+    def __init__(self, arm_side, urdf, base_link='torso_lift_link', end_link='%s_gripper_tool_frame',
                  controller_name='/%s_cart', kdl_tree=None, timeout=1.):
-        super(PR2ArmJTranspose, self).__init__(arm_side, urdf, base_link, end_link, 
+        super(PR2ArmJTranspose, self).__init__(arm_side, urdf, base_link, end_link,
                                                controller_name, kdl_tree, timeout)
-        rospy.Subscriber(self.controller_name + '/state', JTCartesianControllerState, 
+        rospy.Subscriber(self.controller_name + '/state', JTCartesianControllerState,
                          self._ctrl_state_cb)
         if self.wait_for_joint_angles(0):
             if not self.wait_for_ep(timeout):
@@ -71,7 +68,7 @@ class PR2ArmJTranspose(PR2ArmCartPostureBase):
             self.ctrl_state_dict["tau_pose"] = np.array(ctrl_state.tau_pose)
             self.ctrl_state_dict["tau_posture"] = np.array(ctrl_state.tau_posture)
             self.ctrl_state_dict["tau"] = np.array(ctrl_state.tau)
-            self.ctrl_state_dict["F"] = np.array([ctrl_state.F.force.x, 
+            self.ctrl_state_dict["F"] = np.array([ctrl_state.F.force.x,
                                                   ctrl_state.F.force.y,
                                                   ctrl_state.F.force.z,
                                                   ctrl_state.F.torque.x,

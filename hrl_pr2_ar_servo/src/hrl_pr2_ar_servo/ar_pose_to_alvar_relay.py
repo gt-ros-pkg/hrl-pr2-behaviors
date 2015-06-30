@@ -59,6 +59,6 @@ class recastMarkerMsg:
         new_msg.markers = [marker]
         self.marker_repub.publish(new_msg)
 
-if __name__ == "__main__":
+def main():
     recastNode = recastMarkerMsg()
     rospy.spin()
