@@ -26,13 +26,11 @@ catkin_package(
     LIBRARIES 
 )
 
-install(DIRECTORY scripts/
-        DESTINATION ${CATKIN_PACKAGE_BIN_DIRECTORY}
-        USE_SOURSE_PERMISSIONS)
-
-install(DIRECTORY test/
-        DESTINATION ${CATKIN_PACKAGE_BIN_DIRECTORY}
-        USE_SOURSE_PERMISSIONS)
+catkin_install_python(PROGRAMS 
+        scripts/traj_playback 
+        scripts/traj_playback_backend 
+        scripts/traj_playback_interface 
+        DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 install(DIRECTORY launch/
         DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch)

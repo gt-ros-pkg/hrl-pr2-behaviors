@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(hrl_pr2_ar_servo)
-# Load catkin and all dependencies required for this package
-find_package(catkin REQUIRED COMPONENTS image_geometry dynamic_reconfigure tf_conversions pykdl_utils ar_track_alvar)
+find_package(catkin REQUIRED COMPONENTS image_geometry dynamic_reconfigure tf_conversions pykdl_utils ar_track_alvar message_generation geometry_msgs std_msgs)
 find_package(OpenCV REQUIRED)
 
 catkin_python_setup()
@@ -18,13 +17,13 @@ add_message_files(
 
 ## Generate added messages and services with any dependencies listed here
 generate_messages(
-    DEPENDENCIES geometry_msgs
+    DEPENDENCIES geometry_msgs std_msgs
 )
 
 # catkin_package parameters: http://ros.org/doc/groovy/api/catkin/html/dev_guide/generated_cmake_api.html#catkin-package
 catkin_package(
     DEPENDS OpenCV
-    CATKIN_DEPENDS image_geometry dynamic_reconfigure tf_conversions pykdl_utils ar_track_alvar
+    CATKIN_DEPENDS image_geometry dynamic_reconfigure tf_conversions pykdl_utils ar_track_alvar message_runtime geometry_msgs std_msgs
     INCLUDE_DIRS 
     LIBRARIES 
 )

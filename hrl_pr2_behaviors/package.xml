@@ -17,7 +17,6 @@
   <buildtool_depend>catkin</buildtool_depend>
   <run_depend>hrl_pr2_arms</run_depend>
   <run_depend>hrl_pr2_ar_servo</run_depend>
-  <run_depend>hrl_pr2_force_ctrl</run_depend>
   <run_depend>hrl_pr2_tool_grasp</run_depend>
   <run_depend>hrl_pr2_traj_playback</run_depend>
 
