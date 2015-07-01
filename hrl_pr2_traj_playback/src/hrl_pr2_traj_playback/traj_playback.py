@@ -1,8 +1,8 @@
-#! /usr/bin/python
+#!/usr/bin/env python
+
 
 import numpy as np
 import cPickle as pickle
-from threading import Lock
 import copy
 
 import roslib
@@ -15,7 +15,7 @@ import actionlib
 
 from hrl_pr2_arms.pr2_arm_joint_traj import create_ep_arm, PR2ArmJointTraj
 from hrl_pr2_arms.pr2_controller_switcher import ControllerSwitcher
-from msg import TrajectoryPlayAction, TrajectoryPlayGoal
+from hrl_pr2_traj_playback.msg import TrajectoryPlayAction
 
 RATE = 20
 JOINT_TOLERANCES = [0.03, 0.1, 0.1, 0.1, 0.17, 0.15, 0.12]
@@ -435,6 +435,3 @@ def main():
                                     param_file=opts.param_file,
                                     reverse=opts.reverse,
                                     blocking=True)
-
-if __name__ == "__main__":
-    main()

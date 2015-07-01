@@ -1,7 +1,7 @@
-#! /usr/bin/python
+#!/usr/bin/env python
 
 import sys
-from PyQt4 import QtCore, QtGui, uic
+from PyQt4 import QtCore, QtGui
 
 import roslib
 roslib.load_manifest("rospy")
@@ -14,6 +14,7 @@ from std_msgs.msg import Bool
 from arm_pose_move_gui import Ui_Frame as QTArmPoseMoveGUIFrame
 from msg import ArmPoseMoveCmd
 from arm_pose_move_backend import HEARTBEAT_TOPIC, COMMAND_TOPIC, MONITOR_RATE
+
 
 class ArmPoseMoveGUIFrame(QtGui.QFrame):
     def __init__(self):
@@ -72,12 +73,10 @@ class ArmPoseMoveGUIFrame(QtGui.QFrame):
     def monitor_cb(self):
         self.heartbeat_pub.publish(Bool())
 
+
 def main():
     rospy.init_node("arm_pose_move_interface")
     app = QtGui.QApplication(sys.argv)
     frame = ArmPoseMoveGUIFrame()
     frame.show()
     sys.exit(app.exec_())
-
-if __name__ == "__main__":
-    main()

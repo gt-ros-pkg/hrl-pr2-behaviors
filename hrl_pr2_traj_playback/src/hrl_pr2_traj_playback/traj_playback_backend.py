@@ -6,10 +6,11 @@ import roslib
 roslib.load_manifest("hrl_pr2_traj_playback")
 import rospy
 import rosparam
+import roslaunch
 from std_msgs.msg import Bool
 
 from traj_playback import TrajPlayback
-from traj_playback import CTRL_NAME_LOW, CTRL_NAME_NONE, PARAMS_FILE_LOW, PARAMS_FILE_NONE
+from traj_playback import CTRL_NAME_LOW, PARAMS_FILE_LOW
 from msg import TrajPlaybackCmd
 
 HEARTBEAT_TOPIC = '/arm_pose_move_gui/heartbeat'
@@ -18,6 +19,7 @@ MONITOR_RATE = 20
 POSE_TRAJ_PARAM_FILE = 'pose_traj_dir.yaml'
 POSE_TRAJ_PARAM_PREFIX = '$(find kelsey_sandbox)/params/'
 
+
 class ArmPoseMoveGuiBackend(object):
     def __init__(self):
         params = rosparam.get_param("/arm_pose_move")
@@ -25,7 +27,7 @@ class ArmPoseMoveGuiBackend(object):
         self.traj_dict = params['trajectories']
         self.apm_ctrl = TrajPlayback(CTRL_NAME_LOW, PARAMS_FILE_LOW)
         rospy.Subscriber(HEARTBEAT_TOPIC, Bool, self.heartbeat_cb)
-        rospy.Subscriber(COMMAND_TOPIC, ArmPoseMoveCmd, self.cmd_cb)
+        rospy.Subscriber(COMMAND_TOPIC, TrajPlaybackCmd, self.cmd_cb)
 
     def heartbeat_cb(self, msg):
         pass
@@ -37,10 +39,10 @@ class ArmPoseMoveGuiBackend(object):
                     filename = self.traj_dict[msg.traj_name]['file']
                     filepath = roslaunch.substitution_args.resolve_args(POSE_TRAJ_PARAM_PREFIX + filename)
                     if msg.is_setup:
-                        result = self.apm_ctrl.move_to_setup_from_file(filepath, 
+                        result = self.apm_ctrl.move_to_setup_from_file(filepath,
                                                      reverse=not msg.is_forward, blocking=False)
                     else:
-                        result = self.apm_ctrl.exec_traj_from_file(filepath, 
+                        result = self.apm_ctrl.exec_traj_from_file(filepath,
                                                      reverse=not msg.is_forward, blocking=False)
                 else:
                     filename = self.pose_dict[msg.traj_name]['file']
@@ -56,7 +58,3 @@ def main():
     rospy.init_node("arm_pose_move_backend")
     apm_backend = ArmPoseMoveGuiBackend()
     rospy.spin()
-    
-
-if __name__ == "__main__":
-    main()
