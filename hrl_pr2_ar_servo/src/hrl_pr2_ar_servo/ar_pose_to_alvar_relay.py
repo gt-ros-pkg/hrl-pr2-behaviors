@@ -36,10 +36,6 @@ class recastMarkerMsg:
             self.send_new_goal(goal)
             rospy.Subscriber(real_name, ARMarker, self.ar_pose_switch)
             self.defined = True
-        elif marker_type == "ar_track_alvar/AlvarMarkers" and not self.defined:
-            pass
-        else:
-            print "Warning, Message must be of type ar_pose/ARMarker or ar_track_alvar/AlvarMarkers"
 
     def send_new_goal(self, goal):
         goal.marker_topic = 'ar_tag_pose'
