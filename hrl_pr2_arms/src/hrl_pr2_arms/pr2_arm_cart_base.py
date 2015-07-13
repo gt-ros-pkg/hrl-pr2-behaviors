@@ -1,4 +1,4 @@
-#! /usr/bin/python
+#!/usr/bin/env python
 #
 # Base class for interacting with a PR2 Cartesian realtime controller.
 #
@@ -36,9 +36,10 @@ import rospy
 from std_msgs.msg import Float64MultiArray
 from geometry_msgs.msg import PoseStamped
 
-from ep_arm_base import EPArmBase, create_ep_arm
+from ep_arm_base import EPArmBase
 from hrl_geom.pose_converter import PoseConv
 import hrl_geom.transformations as trans
+
 
 def extract_twist(msg):
     return np.array([msg.linear.x, msg.linear.y, msg.linear.z,
@@ -47,12 +48,16 @@ def extract_twist(msg):
 ##
 # Base class for interacting with the Cartesian controllers on the PR2.
 # The equilibrium points are pose-like objects.
+
+
 class PR2ArmCartBase(EPArmBase):
+
     def __init__(self, arm_side, urdf, base_link='torso_lift_link', end_link='%s_gripper_tool_frame',
                  controller_name='/%s_cart', kdl_tree=None, timeout=1.):
         super(PR2ArmCartBase, self).__init__(arm_side, urdf, base_link, end_link,
                                              controller_name, kdl_tree, timeout)
-        self.command_pose_pub = rospy.Publisher(self.controller_name + '/command_pose', PoseStamped)
+        self.command_pose_pub = rospy.Publisher(
+            self.controller_name + '/command_pose', PoseStamped)
 
     ##
     # Command the realtime controller to set its cartesian equilibrium
@@ -74,14 +79,15 @@ class PR2ArmCartBase(EPArmBase):
                          np.array(np.tile(pos_b - pos_a, (1, num_samps))) * np.array(t_vals))
         pos_waypoints = [np.mat(pos).T for pos in pos_waypoints.T]
         rot_homo_a, rot_homo_b = np.eye(4), np.eye(4)
-        rot_homo_a[:3,:3] = rot_a
-        rot_homo_b[:3,:3] = rot_b
+        rot_homo_a[:3, :3] = rot_a
+        rot_homo_b[:3, :3] = rot_b
         quat_a = trans.quaternion_from_matrix(rot_homo_a)
         quat_b = trans.quaternion_from_matrix(rot_homo_b)
         rot_waypoints = []
         for t in t_vals:
             cur_quat = trans.quaternion_slerp(quat_a, quat_b, t)
-            rot_waypoints.append(np.mat(trans.quaternion_matrix(cur_quat))[:3,:3])
+            rot_waypoints.append(
+                np.mat(trans.quaternion_matrix(cur_quat))[:3, :3])
         return zip(pos_waypoints, rot_waypoints)
 
     ##
@@ -90,18 +96,21 @@ class PR2ArmCartBase(EPArmBase):
         pos_act, rot_act = PoseConv.to_pos_rot(ep_actual)
         pos_des, rot_des = PoseConv.to_pos_rot(ep_desired)
         err = np.mat(np.zeros((6, 1)))
-        err[:3,0] = pos_act - pos_des
-        err[3:6,0] = np.mat(trans.euler_from_matrix(rot_des.T * rot_act)).T
+        err[:3, 0] = pos_act - pos_des
+        err[3:6, 0] = np.mat(trans.euler_from_matrix(rot_des.T * rot_act)).T
         return err
 
 ##
 # Class which extends the PR2ArmCartBase to provide functionality for changing the
 # posture.
+
+
 class PR2ArmCartPostureBase(PR2ArmCartBase):
+
     def __init__(self, arm_side, urdf, base_link='torso_lift_link', end_link='%s_gripper_tool_frame',
                  controller_name='/%s_cart', kdl_tree=None, timeout=1.):
         super(PR2ArmCartPostureBase, self).__init__(arm_side, urdf, base_link, end_link,
-                                             controller_name, kdl_tree, timeout)
+                                                    controller_name, kdl_tree, timeout)
         self.command_posture_pub = rospy.Publisher(self.controller_name + '/command_posture',
                                                    Float64MultiArray)
 
@@ -121,4 +130,3 @@ class PR2ArmCartPostureBase(PR2ArmCartBase):
         msg = Float64MultiArray()
         msg.data = posture
         self.command_posture_pub.publish(msg)
-

@@ -1,4 +1,4 @@
-#! /usr/bin/python
+#! /usr/bin/env python
 #
 # Class for interacting with a PR2 JointTrajectory realtime controller.
 #
@@ -51,8 +51,8 @@ class PR2ArmJointTraj(EPArmBase):
         super(PR2ArmJointTraj, self).__init__(arm_side, urdf, base_link, end_link,
                                               controller_name, kdl_tree, timeout)
         self.joint_action_client = actionlib.SimpleActionClient(
-                                       self.controller_name + '/joint_trajectory_action',
-                                       JointTrajectoryAction)
+            self.controller_name + '/joint_trajectory_action',
+            JointTrajectoryAction)
 
         self._state_sub = rospy.Subscriber(self.controller_name + '/state',
                                            JointTrajectoryControllerState, self._ctrl_state_cb)

@@ -1,4 +1,4 @@
-#! /usr/bin/python
+#!/usr/bin/env python
 #
 # Base class for interacting with a realtime controller using an equilibrium point control
 # framework.
@@ -59,6 +59,7 @@ class EPArmBase(JointKinematics):
     # @param kdl_tree Optional KDL.Tree object to use. If None, one will be generated
     #                          from the URDF.
     # @param timeout Time in seconds to wait for the /joint_states topic.
+
     def __init__(self, arm_side, urdf, base_link, end_link, controller_name=None,
                  kdl_tree=None, timeout=1.):
         if "%s" in base_link:
@@ -67,14 +68,16 @@ class EPArmBase(JointKinematics):
             end_link = end_link % arm_side
         if controller_name is not None and "%s" in controller_name:
             controller_name = controller_name % arm_side
-        super(EPArmBase, self).__init__(urdf, base_link, end_link, kdl_tree, timeout)
+        super(EPArmBase, self).__init__(
+            urdf, base_link, end_link, kdl_tree, timeout)
         self.arm_side = arm_side
         self.controller_name = controller_name
-        self.ep = None # equilibrium point
-        self.ep_time = None # time ep was last recorded
+        self.ep = None  # equilibrium point
+        self.ep_time = None  # time ep was last recorded
         self.ep_lock = Lock()
         self.ctrl_state_lock = Lock()
-        self.ctrl_state_dict = {} # stores information from the realtime controller
+        # stores information from the realtime controller
+        self.ctrl_state_dict = {}
 
     ##
     # Returns the current pose of the tooltip
@@ -116,10 +119,12 @@ class EPArmBase(JointKinematics):
     def get_controller_state(self):
         with self.ctrl_state_lock:
             if self.controller_name is None:
-                rospy.logerror("[ep_arm_base] get_controller_state NOT IMPLEMENTED!")
+                rospy.logerror(
+                    "[ep_arm_base] get_controller_state NOT IMPLEMENTED!")
                 return None
             elif len(self.ctrl_state_dict) == 0:
-                rospy.logwarn("[ep_arm_base] Controller state not yet published.")
+                rospy.logwarn(
+                    "[ep_arm_base] Controller state not yet published.")
                 return None
             return self.ctrl_state_dict
 
@@ -140,6 +145,7 @@ class EPArmBase(JointKinematics):
         with self.ep_lock:
             self.ep_time = rospy.get_time()
             self.ep = ep
+
 
 def create_ep_arm(arm_side, arm_type=EPArmBase, urdf_filename=None, **args):
     if urdf_filename is None:
