@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(hrl_pr2_ar_servo)
-find_package(catkin REQUIRED COMPONENTS image_geometry dynamic_reconfigure tf_conversions pykdl_utils ar_track_alvar message_generation geometry_msgs std_msgs)
+find_package(catkin REQUIRED COMPONENTS image_geometry image_transport cv_bridge dynamic_reconfigure tf_conversions pykdl_utils ar_track_alvar_msgs message_generation geometry_msgs std_msgs)
 find_package(OpenCV REQUIRED)
 
 catkin_python_setup()
@@ -23,7 +23,7 @@ generate_messages(
 # catkin_package parameters: http://ros.org/doc/groovy/api/catkin/html/dev_guide/generated_cmake_api.html#catkin-package
 catkin_package(
     DEPENDS OpenCV
-    CATKIN_DEPENDS image_geometry dynamic_reconfigure tf_conversions pykdl_utils ar_track_alvar message_runtime geometry_msgs std_msgs
+    CATKIN_DEPENDS image_geometry image_transport cv_bridge dynamic_reconfigure tf_conversions pykdl_utils ar_track_alvar_msgs message_runtime geometry_msgs std_msgs
     INCLUDE_DIRS 
     LIBRARIES 
 )
@@ -33,8 +33,8 @@ include_directories(${catkin_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
 add_executable(ar_confirm src/ar_confirm.cpp)
 add_executable(ar_servo_image_proc src/ar_servo_image_proc.cpp)
 
-target_link_libraries(ar_confirm ${catkin_LIBRARIES} ${OpenCV_INCLUDE_DIRS})
-target_link_libraries(ar_servo_image_proc ${catkin_LIBRARIES} ${OpenCV_INCLUDE_DIRS})
+target_link_libraries(ar_confirm ${catkin_LIBRARIES} ${OpenCV_LIBS})
+target_link_libraries(ar_servo_image_proc ${catkin_LIBRARIES} ${OpenCV_LIBS})
 
 catkin_install_python(PROGRAMS 
     scripts/ar_pose_to_alvar_relay

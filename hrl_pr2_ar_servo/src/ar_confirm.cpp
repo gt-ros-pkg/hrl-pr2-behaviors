@@ -8,9 +8,9 @@
 #include <image_geometry/pinhole_camera_model.h>
 #include <geometry_msgs/PoseStamped.h>
 
-#include <ar_track_alvar/AlvarMarkers.h>
+#include <ar_track_alvar_msgs/AlvarMarkers.h>
 
-ar_track_alvar::AlvarMarkers::Ptr ar_tag_l, ar_tag_r;
+ar_track_alvar_msgs::AlvarMarkers::Ptr ar_tag_l, ar_tag_r;
 ros::Subscriber ar_tag_l_sub, ar_tag_r_sub;
 double last_l_time, last_r_time;
 
@@ -20,19 +20,19 @@ image_geometry::PinholeCameraModel cam_model;
 boost::shared_ptr<tf::TransformListener> tf_list;
 cv_bridge::CvImagePtr cv_img;
 
-void subARTagLCallback(const ar_track_alvar::AlvarMarkers::Ptr& ar_tag_)
+void subARTagLCallback(const ar_track_alvar_msgs::AlvarMarkers::Ptr& ar_tag_)
 {
     ar_tag_l = ar_tag_;
     last_l_time = ros::Time::now().toSec();
 }
 
-void subARTagRCallback(const ar_track_alvar::AlvarMarkers::Ptr& ar_tag_)
+void subARTagRCallback(const ar_track_alvar_msgs::AlvarMarkers::Ptr& ar_tag_)
 {
     ar_tag_r = ar_tag_;
     last_r_time = ros::Time::now().toSec();
 }
 
-void writeTag(const ar_track_alvar::AlvarMarkers::Ptr& ar_tags, const sensor_msgs::ImageConstPtr& img_msg,
+void writeTag(const ar_track_alvar_msgs::AlvarMarkers::Ptr& ar_tags, const sensor_msgs::ImageConstPtr& img_msg,
               const cv::Scalar& color)
 {
     if(!tf_list->waitForTransform(img_msg->header.frame_id, ar_tags->header.frame_id,
