@@ -1,0 +1,47 @@
+<package>
+<name>grab_tool_action</name>
+<version>0.0.0</version>
+<description>
+This package is to create a tool grabbing action for the PR2. 
+</description>
+<maintainer email="mrich7@gatech.edu">Megan Rich</maintainer>
+<license>BSD</license>
+<url type="website">http://ros.org/wiki/grab_tool_action</url>
+
+ <buildtool_depend>catkin</buildtool_depend>
+
+ <build_depend>message_generation</build_depend>
+ <build_depend>rospy</build_depend>
+ <build_depend>geometry_msgs</build_depend>
+ <build_depend>std_msgs</build_depend> 
+ <build_depend>actionlib</build_depend>
+ <build_depend>actionlib_msgs</build_depend>
+ <build_depend>tf</build_depend>
+ <build_depend>tf2</build_depend>
+ <build_depend>pr2_controllers_msgs</build_depend>
+ <build_depend>pr2_common_action_msgs</build_depend>
+ <build_depend>hrl_haptic_manipulation_in_clutter_srvs</build_depend>
+ <build_depend>hrl_haptic_manipulation_in_clutter_msgs</build_depend>
+ <build_depend>hrl_msgs</build_depend>
+ <build_depend>pr2_ft_moveit_config</build_depend>
+ <build_depend>moveit_commander</build_depend>
+
+ <run_depend>message_runtime</run_depend>
+ <run_depend>rospy</run_depend>
+ <run_depend>geometry_msgs</run_depend>
+ <run_depend>std_msgs</run_depend>
+ <run_depend>tf</run_depend>
+ <run_depend>tf2</run_depend>
+ <run_depend>actionlib</run_depend>
+ <run_depend>actionlib_msgs</run_depend>
+ <run_depend>pr2_controllers_msgs</run_depend>
+ <run_depend>pr2_common_action_msgs</run_depend>
+ <run_depend>hrl_haptic_manipulation_in_clutter_srvs</run_depend>
+ <run_depend>hrl_haptic_manipulation_in_clutter_msgs</run_depend>
+ <run_depend>hrl_msgs</run_depend>
+ <run_depend>pr2_ft_moveit_config</run_depend>
+ <run_depend>moveit_commander</run_depend>
+
+
+</package>
+

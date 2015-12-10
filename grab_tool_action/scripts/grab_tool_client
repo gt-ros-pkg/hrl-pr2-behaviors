@@ -1,0 +1,5 @@
+#!/usr/bin/env python
+from grab_tool_action import grab_tool_client
+
+if __name__=='__main__':
+    grab_tool_client.main()
