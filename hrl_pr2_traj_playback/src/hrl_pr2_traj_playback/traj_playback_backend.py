@@ -2,8 +2,8 @@
 
 import numpy as np
 
-import roslib
-roslib.load_manifest("hrl_pr2_traj_playback")
+#import roslib
+#roslib.load_manifest("hrl_pr2_traj_playback")
 import rospy
 import rosparam
 import roslaunch
