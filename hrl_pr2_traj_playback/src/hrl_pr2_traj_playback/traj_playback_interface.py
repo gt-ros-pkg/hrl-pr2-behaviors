@@ -3,10 +3,10 @@
 import sys
 from PyQt4 import QtCore, QtGui
 
-import roslib
-roslib.load_manifest("rospy")
-roslib.load_manifest("std_msgs")
-roslib.load_manifest("rosparam")
+#import roslib
+#roslib.load_manifest("rospy")
+#roslib.load_manifest("std_msgs")
+#roslib.load_manifest("rosparam")
 import rospy
 import rosparam
 from std_msgs.msg import Bool

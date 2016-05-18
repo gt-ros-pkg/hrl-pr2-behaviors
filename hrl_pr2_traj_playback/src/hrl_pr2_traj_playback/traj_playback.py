@@ -5,8 +5,8 @@ import numpy as np
 import cPickle as pickle
 import copy
 
-import roslib
-roslib.load_manifest("hrl_pr2_traj_playback")
+#import roslib
+#roslib.load_manifest("hrl_pr2_traj_playback")
 import rospy
 from std_msgs.msg import String
 from std_srvs.srv import Empty, EmptyResponse
