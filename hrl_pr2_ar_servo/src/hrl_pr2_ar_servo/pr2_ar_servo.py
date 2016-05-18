@@ -18,7 +18,7 @@ from hrl_geom.pose_converter import PoseConv
 from pid_controller import PIDController
 from pykdl_utils.joint_kinematics import create_joint_kin
 
-from ar_track_alvar.msg import AlvarMarkers
+from ar_track_alvar_msgs.msg import AlvarMarkers
 
 
 class ServoKalmanFilter(object):
