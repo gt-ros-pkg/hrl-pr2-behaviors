@@ -110,8 +110,9 @@ def create_base_marker(pose, id, color):
     return marker
 
 class PR2ARServo(object):
-    def __init__(self, ar_topic):
-        self.ar_sub = rospy.Subscriber(ar_topic, AlvarMarkers, self.ar_sub)   #changed to use Alvar markers instead of ar pose markers
+    def __init__(self, ar_topic, tag_id):
+        self.tag_id = tag_id
+        self.ar_sub = rospy.Subscriber(ar_topic, AlvarMarkers, self.ar_sub_cb)   #changed to use Alvar markers instead of ar pose markers
         self.mkr_pub = rospy.Publisher("visualization_marker", Marker)
 
         self.cur_ar_pose = None
@@ -120,23 +121,24 @@ class PR2ARServo(object):
         self.base_pub = rospy.Publisher("/base_controller/command", Twist)
         self.preempt_requested = False
 
-    def ar_sub(self, msg):
+    def ar_sub_cb(self, msg):
         if self.kin_arm == None:
-            tags=msg.markers
-            if len(tags)>0:
-                end_frame=tags[0].header.frame_id
-                self.kin_arm = create_joint_kin(base_link="base_link",
-                                            end_link=end_frame)
-        base_B_camera = self.kin_arm.forward()
-        camera_B_tag = PoseConv.to_homo_mat(msg.markers[0].pose.pose) #changed to use Alvar Markers
+            markers=msg.markers
+            for i in xrange(len(markers)):
+                if markers[i].id == self.tag_id:
+                    end_frame=markers[i].header.frame_id
+                    self.kin_arm = create_joint_kin(base_link="base_link",
+                                                    end_link=end_frame)
+                base_B_camera = self.kin_arm.forward()
+                camera_B_tag = PoseConv.to_homo_mat(markers[i].pose.pose) #changed to use Alvar Markers
 
-        cur_ar_pose = base_B_camera * camera_B_tag
-        # check to see if the tag is in front of the robot
-        if cur_ar_pose[0,3] < 0.:
-            rospy.logwarn("Tag behind robot: Strange AR toolkit bug!")
-            return
-        self.cur_ar_pose = cur_ar_pose
-        self.ar_pose_updated = True
+                cur_ar_pose = base_B_camera * camera_B_tag
+                # check to see if the tag is in front of the robot
+                #if cur_ar_pose[0,3] < 0.:
+                #    rospy.logwarn("Tag behind robot: Strange AR toolkit bug!")
+                #    return
+                self.cur_ar_pose = cur_ar_pose
+                self.ar_pose_updated = True
 
     def request_preempt(self):
         self.preempt_requested = True

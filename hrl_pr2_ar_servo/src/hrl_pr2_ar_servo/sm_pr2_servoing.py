@@ -185,7 +185,7 @@ class ServoOnTagGoal(Thread):
     def __init__(self, marker_topic, tag_goal_xyt, tag_id, find_tag_timeout=None):
         Thread.__init__(self)
         self.tag_goal_xyt = tag_goal_xyt
-        self.viz_servo = PR2ARServo(marker_topic)
+        self.viz_servo = PR2ARServo(marker_topic, tag_id)
         self.sm_pr2_servoing = self.build_full_sm(self.viz_servo, self.tag_goal_xyt, find_tag_timeout=None)
         self.daemon = True
 
