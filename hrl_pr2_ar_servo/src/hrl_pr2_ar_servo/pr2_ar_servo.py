@@ -122,7 +122,6 @@ class PR2ARServo(object):
         self.preempt_requested = False
 
     def ar_sub_cb(self, msg):
-        
         markers=msg.markers
         for i in xrange(len(markers)):
             if markers[i].id == self.tag_id:
@@ -132,9 +131,7 @@ class PR2ARServo(object):
                                                     end_link=end_frame)
                 base_B_camera = self.kin_arm.forward()
                 camera_B_tag = PoseConv.to_homo_mat(markers[i].pose.pose) #changed to use Alvar Markers
-                print 'got a tag!'
-                rospy.loginfo("Got a tag!")
-
+                
                 cur_ar_pose = base_B_camera * camera_B_tag
                 # check to see if the tag is in front of the robot
                 #if cur_ar_pose[0,3] < 0.:
