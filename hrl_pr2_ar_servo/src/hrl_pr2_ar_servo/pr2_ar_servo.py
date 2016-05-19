@@ -113,12 +113,12 @@ class PR2ARServo(object):
     def __init__(self, ar_topic, tag_id):
         self.tag_id = tag_id
         self.ar_sub = rospy.Subscriber(ar_topic, AlvarMarkers, self.ar_sub_cb)   #changed to use Alvar markers instead of ar pose markers
-        self.mkr_pub = rospy.Publisher("visualization_marker", Marker)
+        self.mkr_pub = rospy.Publisher("visualization_marker", Marker, queue_size=1)
 
         self.cur_ar_pose = None
         self.kin_arm = None
         self.ar_pose_updated = False
-        self.base_pub = rospy.Publisher("/base_controller/command", Twist)
+        self.base_pub = rospy.Publisher("/base_controller/command", Twist, queue_size=1)
         self.preempt_requested = False
 
     def ar_sub_cb(self, msg):

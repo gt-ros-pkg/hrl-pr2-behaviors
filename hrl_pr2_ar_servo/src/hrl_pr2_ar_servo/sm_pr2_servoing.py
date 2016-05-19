@@ -122,7 +122,7 @@ class BoolTopicState(smach.State):
 class PublishState(smach.State):
     def __init__(self, topic, msg_type, msg):
         smach.State.__init__(self, outcomes=['succeeded'])
-        self.pub = rospy.Publisher(topic, msg_type)
+        self.pub = rospy.Publisher(topic, msg_type, queue_size=1)
         self.msg = msg
 
     def execute(self, userdata):
@@ -313,7 +313,7 @@ class ServoSMManager(object):
         self.servo_sm_thread = None
         self.tfl = tf.TransformListener()
         self.tag_goal_sub = rospy.Subscriber("ar_servo_goal_data", ARServoGoalData, self.goal_data_cb)
-        self.debug_pub = rospy.Publisher("ar_tag_goal", PoseStamped, latch=True)
+        self.debug_pub = rospy.Publisher("ar_tag_goal", PoseStamped, latch=True, queue_size=1)
 
     def pose_to_2d(self, ps):
         """ Extract X, Y, Theta from a pose stamped msg."""
