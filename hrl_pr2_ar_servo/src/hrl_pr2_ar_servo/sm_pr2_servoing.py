@@ -363,3 +363,6 @@ def main():
     find_tag_timeout = None
     servo_manager = ServoSMManager(find_tag_timeout)
     rospy.spin()
+
+if __name__ == '__main__':
+    main()
