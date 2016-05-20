@@ -231,7 +231,7 @@ class ServoOnTagGoal(Thread):
             smach.StateMachine.add('BEGIN_SERVO',
                                    PublishState("/pr2_ar_servo/state_feedback",
                                                 Int8, Int8(ServoStates.BEGIN_SERVO)),
-                                   transitions={'succeeded' : 'CC_SERVOING'})
+                                   transitions={'succeeded' : 'ORIENTATION_SERVOING'})
 
             smach.StateMachine.add('ORIENTATION_SERVOING',
                                    self.build_orientation_servoing(viz_servo, tag_goal_xyt),
