@@ -231,7 +231,7 @@ class ServoOnTagGoal(Thread):
             smach.StateMachine.add('BEGIN_SERVO',
                                    PublishState("/pr2_ar_servo/state_feedback",
                                                 Int8, Int8(ServoStates.BEGIN_SERVO)),
-                                   transitions={'succeeded' : 'ORIENTATION_SERVOING'})
+                                   transitions={'succeeded' : 'CC_SERVOING'})
 
             smach.StateMachine.add('ORIENTATION_SERVOING',
                                    self.build_orientation_servoing(viz_servo, tag_goal_xyt),
@@ -304,7 +304,7 @@ class ServoOnTagGoal(Thread):
 
         with cc_servoing:
             smach.Concurrence.add('SERVOING',
-                                  ServoARTagState(viz_servo, tag_goal_xyt))
+                                  ServoARTagState(viz_servo, tag_goal_xyt, ignore_xy=False))
 
             smach.Concurrence.add('ARM_COLLISION_DETECTION',
                                   ArmCollisionDetection())
