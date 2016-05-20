@@ -212,7 +212,7 @@ class ServoOnTagGoal(Thread):
                                                  "preempted":"preempted",
                                                  "aborted":"aborted"})
 
-            smach.StateMachine.add('FOUND_TAG',
+            smach.StateMachine.add('FOUND_TAG', 
                                    PublishState("/pr2_ar_servo/state_feedback",
                                                 Int8, Int8(ServoStates.FOUND_TAG)),
                                    transitions={'succeeded' : 'UI_SERVO_WAIT'})
