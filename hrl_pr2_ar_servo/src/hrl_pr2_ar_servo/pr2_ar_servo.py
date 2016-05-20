@@ -221,7 +221,7 @@ class PR2ARServo(object):
 
         pid_x = PIDController(k_p=0.75, rate=rate, saturation=0.05)
         pid_y = PIDController(k_p=0.75, rate=rate, saturation=0.05)
-        pid_r = PIDController(k_p=0.75, rate=rate, saturation=0.12)
+        pid_r = PIDController(k_p=0.75, rate=rate, saturation=0.15)
         r = rospy.Rate(rate)
         self.preempt_requested = False
         while True:
