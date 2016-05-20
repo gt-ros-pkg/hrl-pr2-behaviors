@@ -125,10 +125,10 @@ class PR2ARServo(object):
         markers=msg.markers
         for i in xrange(len(markers)):
             if markers[i].id == self.tag_id:
-                # if self.kin_arm == None:
-                end_frame=markers[i].header.frame_id
-                self.kin_arm = create_joint_kin(base_link="base_link",
-                                                end_link=end_frame)
+                if self.kin_arm == None:
+                    end_frame=markers[i].header.frame_id
+                    self.kin_arm = create_joint_kin(base_link="base_link",
+                                                    end_link=end_frame)
                 base_B_camera = self.kin_arm.forward()
                 camera_B_tag = PoseConv.to_homo_mat(markers[i].pose.pose) #changed to use Alvar Markers
                 
