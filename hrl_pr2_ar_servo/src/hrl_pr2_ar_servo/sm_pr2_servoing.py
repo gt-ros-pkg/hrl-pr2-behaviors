@@ -158,7 +158,7 @@ class FindARTagState(smach.State):
 
 class ServoARTagState(smach.State):
     """ A Smach State for servoing to an AR Tag. """
-    def __init__(self, viz_servo, tag_goal_xyt):
+    def __init__(self, viz_servo, tag_goal_xyt, ignore_xy=False):
         smach.State.__init__(self, outcomes=['lost_tag'] + OUTCOMES_SPA,
                                    input_keys=['initial_ar_pose'])
         self.viz_servo = viz_servo
@@ -174,7 +174,7 @@ class ServoARTagState(smach.State):
 
         initial_ar_pose = userdata['initial_ar_pose'] if 'initial_ar_pose' in userdata else None
         self.viz_servo.preempt_requested = False
-        outcome = self.viz_servo.servo_to_tag(pose_goal=self.tag_goal_xyt, initial_ar_pose=initial_ar_pose)
+        outcome = self.viz_servo.servo_to_tag(pose_goal=self.tag_goal_xyt, initial_ar_pose=initial_ar_pose, ignore_xy=ignore_xy)
         preempt_timer.shutdown()
         return outcome
 
@@ -230,7 +230,15 @@ class ServoOnTagGoal(Thread):
             smach.StateMachine.add('BEGIN_SERVO',
                                    PublishState("/pr2_ar_servo/state_feedback",
                                                 Int8, Int8(ServoStates.BEGIN_SERVO)),
-                                   transitions={'succeeded' : 'CC_SERVOING'})
+                                   transitions={'succeeded' : 'ORIENTATION_SERVOING'})
+
+            smach.StateMachine.add('ORIENTATION_SERVOING',
+                                   self.build_orientation_servoing(viz_servo, tag_goal_xyt),
+                                   transitions={'arm_collision' : 'ARM_COLLISION',
+                                                'laser_collision' : 'LASER_COLLISION',
+                                                'user_preempted' : 'USER_PREEMPT',
+                                                'lost_tag' : 'LOST_TAG',
+                                                'succeeded' : 'CC_SERVOING'})
 
             smach.StateMachine.add('CC_SERVOING',
                                    self.build_cc_servoing(viz_servo, tag_goal_xyt),
@@ -306,6 +314,46 @@ class ServoOnTagGoal(Thread):
             smach.Concurrence.add('USER_PREEMPT_DETECTION',
                                   BoolTopicState("/pr2_ar_servo/preempt"))
         return cc_servoing
+
+    def build_orientation_servoing(self, viz_servo, tag_goal_xyt):
+        """ Create a Smach Concurrence Container.
+            Fill with states for servoing, detecting collision, and processing user preemption.
+        """
+        def term_cb(outcome_map):
+            return True
+
+        def out_cb(outcome_map):
+            if outcome_map['ARM_COLLISION_DETECTION'] == 'collision':
+                return 'arm_collision'
+            #if outcome_map['LASER_COLLISION_DETECTION'] == 'collision':
+            #    return 'laser_collision'
+            if outcome_map['USER_PREEMPT_DETECTION'] == 'true':
+                return 'user_preempted'
+            if outcome_map['USER_PREEMPT_DETECTION'] == 'false':
+                return 'aborted'
+            return outcome_map['ORIENTATION_SERVOING']
+
+        orientation_servoing = smach.Concurrence(
+                                outcomes=OUTCOMES_SPA+
+                                ['arm_collision', 'laser_collision', 'lost_tag', 'user_preempted'],
+                                input_keys=['initial_ar_pose'],
+                                default_outcome='aborted',
+                                child_termination_cb=term_cb,
+                                outcome_cb=out_cb)
+
+        with orientation_servoing:
+            smach.Concurrence.add('ORIENTATION_SERVOING',
+                                  ServoARTagState(viz_servo, tag_goal_xyt, ignore_xy=True))
+
+            smach.Concurrence.add('ARM_COLLISION_DETECTION',
+                                  ArmCollisionDetection())
+
+            #smach.Concurrence.add('LASER_COLLISION_DETECTION',
+            #                      LaserCollisionDetection())
+
+            smach.Concurrence.add('USER_PREEMPT_DETECTION',
+                                  BoolTopicState("/pr2_ar_servo/preempt"))
+        return orientation_servoing
 
 class ServoSMManager(object):
     def __init__(self, find_tag_timeout=None):

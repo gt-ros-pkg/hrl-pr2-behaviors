@@ -205,7 +205,7 @@ class PR2ARServo(object):
                         return np.mean(ar_2d_queue, 0), 'found_tag'
             r.sleep()
 
-    def servo_to_tag(self, pose_goal, goal_error=[0.03, 0.03, 0.1], initial_ar_pose=None):
+    def servo_to_tag(self, pose_goal, goal_error=[0.03, 0.03, 0.1], initial_ar_pose=None, ignore_xy=False):
         lost_tag_thresh = 0.6 #0.4
         goal_ar_pose = homo_mat_from_2d(*pose_goal)
         rate = 8.
@@ -269,10 +269,15 @@ class PR2ARServo(object):
                 y_ctrl = pid_y.update_state(y_filt_err[0,0])
                 r_ctrl = pid_r.update_state(r_filt_err[0,0])
                 base_twist = Twist()
-                base_twist.linear.x = x_ctrl
-                base_twist.linear.y = y_ctrl
                 base_twist.angular.z = r_ctrl
-                cur_filt_err = np.array([x_filt_err[0,0], y_filt_err[0,0], r_filt_err[0,0]])
+                if not ignore_xy:
+                    base_twist.linear.x = x_ctrl
+                    base_twist.linear.y = y_ctrl
+                    cur_filt_err = np.array([x_filt_err[0,0], y_filt_err[0,0], r_filt_err[0,0]])
+                else:
+                    base_twist.linear.x = 0
+                    base_twist.linear.y = 0
+                    cur_filt_err = np.array([0., 0., r_filt_err[0,0]])
                 print "err", ar_err
                 print "Err filt", cur_filt_err
                 print "Twist:", base_twist
