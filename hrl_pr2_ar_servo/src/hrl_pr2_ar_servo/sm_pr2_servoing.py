@@ -163,6 +163,7 @@ class ServoARTagState(smach.State):
                                    input_keys=['initial_ar_pose'])
         self.viz_servo = viz_servo
         self.tag_goal_xyt = tag_goal_xyt
+        self.ignore_xy = ignore_xy
 
     def execute(self, userdata):
         """ Servo to a goal AR Tag, reporting success or lost tag, which checking for preemption."""
@@ -174,7 +175,7 @@ class ServoARTagState(smach.State):
 
         initial_ar_pose = userdata['initial_ar_pose'] if 'initial_ar_pose' in userdata else None
         self.viz_servo.preempt_requested = False
-        outcome = self.viz_servo.servo_to_tag(pose_goal=self.tag_goal_xyt, initial_ar_pose=initial_ar_pose, ignore_xy=ignore_xy)
+        outcome = self.viz_servo.servo_to_tag(pose_goal=self.tag_goal_xyt, initial_ar_pose=initial_ar_pose, ignore_xy=self.ignore_xy)
         preempt_timer.shutdown()
         return outcome
 
