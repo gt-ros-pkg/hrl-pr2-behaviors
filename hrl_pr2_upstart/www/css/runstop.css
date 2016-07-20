@@ -1,0 +1,50 @@
+body {
+    background-color: lightgray;
+}
+
+#button-container {
+    width: 60%;
+    height: 80%;
+    margin-left: 15%;
+    padding: 1%;
+}
+
+button {
+    width: 90%;
+    height: 30%;
+    display: block;
+    margin-left: 5%;
+    margin-top: 5%;
+}
+
+#reset-button {
+    background: green;
+    border: black;
+}
+
+#reset-button:hover{
+    background: #57bd57;
+}
+
+#reset-button:active{
+    background: #006800;
+}
+
+#stop-button {
+    background: red;
+    border: black;
+}
+
+#stop-button:hover {
+    background: #ff6464;
+}
+
+#stop-button:active {
+    background: #b30000;
+}
+
+.ui-button-text {
+    font-size: 3em;
+}
+
+.

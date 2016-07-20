@@ -1,0 +1,11 @@
+<launch>
+  <group ns="runstop_emulator">
+    <node name="roswww" pkg="roswww" type="webserver.py" output="screen" args="--port 1819 --webpath www"/>
+     
+    <node name="rosbridge" pkg="rosbridge_server" type="rosbridge_websocket" output="screen">
+      <param name="port" type="int" value="1820" />
+    </node>
+     
+    <node name="rosapi" pkg="rosapi" type="rosapi_node" output="screen"/>
+  </group>
+</launch>
