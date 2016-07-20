@@ -2,6 +2,10 @@ body {
     background-color: lightgray;
 }
 
+#message {
+    text-align: center;
+}
+
 #button-container {
     width: 60%;
     height: 80%;
@@ -15,11 +19,16 @@ button {
     display: block;
     margin-left: 5%;
     margin-top: 5%;
+    border: black;
 }
+
 
 #reset-button {
     background: green;
-    border: black;
+}
+
+#reset-button.no-connect {
+    background: gray;
 }
 
 #reset-button:hover{
@@ -32,7 +41,10 @@ button {
 
 #stop-button {
     background: red;
-    border: black;
+}
+
+#stop-button.no-connect {
+    background: gray;
 }
 
 #stop-button:hover {

@@ -4,18 +4,22 @@
     var ros = new ROSLIB.Ros({url: 'ws://'+ ROBOT + ':'+ PORT});
     ros.on('close', function(e) {
        console.log("Disconnected or Can't Connect to " + ROBOT + ":"+ PORT + ".");
-       $(body).html("<h1>Lost Connection to Robot<h1>").css('background-color','gray');
+       $('#message').html("<h1>Lost Connection to Robot<h1>");
+       $('button').addClass('no-connect');
       }
     );
 
     ros.on('error', function(e) {
       console.log("Rosbridge Connection Error!");
-      $(body).html("<h1>Lost Connection to Robot<h1>").css('background-color','gray');
+      $('#message').html("<h1>Lost Connection to Robot<h1>");
+      $('button').addClass('no-connect');
       }
     );
 
     ros.on('connection', function(e) {
         console.log("Connected to " + ROBOT + ".");
+        $('#message').empty();
+        $('button').removeClass('no-connect');
          var emulatorService = new ROSLIB.Service({
             ros: ros,
             name:'/emulate_runstop',

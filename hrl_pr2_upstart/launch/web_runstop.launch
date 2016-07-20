@@ -1,4 +1,9 @@
 <launch>
+
+  <!-- Runstop emulator -->
+  <node name="runstop_emulator" type="run_stop_server" pkg="hrl_pr2_upstart" output="screen"/>
+
+  <!-- Web interface server -->
   <group ns="runstop_emulator">
     <node name="roswww" pkg="roswww" type="webserver.py" output="screen" args="--port 1819 --webpath www"/>
      
@@ -8,4 +13,5 @@
      
     <node name="rosapi" pkg="rosapi" type="rosapi_node" output="screen"/>
   </group>
+
 </launch>
