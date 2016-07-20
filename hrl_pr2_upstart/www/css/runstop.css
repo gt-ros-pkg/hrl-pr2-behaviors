@@ -22,7 +22,6 @@ button {
     border: black;
 }
 
-
 #reset-button {
     background: green;
 }
@@ -31,12 +30,20 @@ button {
     background: gray;
 }
 
-#reset-button:hover{
+#reset-button:hover {
     background: #57bd57;
+}
+
+#reset-button.no-connect:hover {
+    background: gray;
 }
 
 #reset-button:active{
     background: #006800;
+}
+
+#reset-button.no-connect:active {
+    background: gray;
 }
 
 #stop-button {
@@ -51,8 +58,16 @@ button {
     background: #ff6464;
 }
 
+#stop-button.no-connect:hover {
+    background: gray;
+}
+
 #stop-button:active {
     background: #b30000;
+}
+
+#stop-button.no-connect:active {
+    background: gray;
 }
 
 .ui-button-text {
