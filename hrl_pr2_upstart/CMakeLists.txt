@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(hrl_pr2_upstart)
 
-find_package(catkin REQUIRED)
+find_package(catkin REQUIRED COMPONENTS message_generation std_msgs)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -40,11 +40,10 @@ catkin_python_setup()
 # )
 
 ## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
+add_service_files(
+   FILES
+   SetRunStop.srv
+)
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -54,10 +53,10 @@ catkin_python_setup()
 # )
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   std_msgs  # Or other packages containing msgs
-# )
+ generate_messages(
+   DEPENDENCIES
+   std_msgs
+ )
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -91,7 +90,7 @@ catkin_python_setup()
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES hrl_pr2_upstart
-#  CATKIN_DEPENDS other_catkin_pkg
+  CATKIN_DEPENDS message_runtime rospy std_msgs std_srvs pr2_power_board
 #  DEPENDS system_lib
 )
 
@@ -135,7 +134,7 @@ catkin_package(
 ## Mark executable scripts (Python etc.) for installation
 ## in contrast to setup.py, you can choose the destination
 install(PROGRAMS
-  scripts/auto_robot_start
+  scripts/run_stop_server
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
