@@ -14,7 +14,6 @@ set -x
 /usr/bin/ssh -q -o ConnectTimeout=2 c2 exit
 while test $? -gt 0
 do
-    echo "Waiting for c2..." >> /tmp/c2_wait.log
     sleep 10
     /usr/bin/ssh -q -o ConnectTimeout=1 c2 exit
 done
