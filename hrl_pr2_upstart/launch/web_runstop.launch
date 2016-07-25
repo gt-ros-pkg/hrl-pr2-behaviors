@@ -1,5 +1,8 @@
 <launch>
 
+  <!-- Runstop status publisher -->
+  <node name="runstop_status_as_bool" type="run_stop_status" pkg="hrl_pr2_upstart" output="screen"/>
+
   <!-- Runstop emulator -->
   <node name="runstop_emulator" type="run_stop_server" pkg="hrl_pr2_upstart" output="screen"/>
 
