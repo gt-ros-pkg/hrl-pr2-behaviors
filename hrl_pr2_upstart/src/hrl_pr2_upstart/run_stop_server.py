@@ -89,7 +89,7 @@ class RunStop(object):
 
 class RunStopServer(object):
     def __init__(self):
-        """Provide dead-man-switch like server for handling wouse run-stops."""
+        """Provide a ros interface to emulate a run-stop event."""
         self.run_stop = RunStop()
         if not self.run_stop.init_successful:
             rospy.logerr("[%s] RunStopEmulator failed to initialize properly! SHUTTING DOWN!", rospy.get_name())

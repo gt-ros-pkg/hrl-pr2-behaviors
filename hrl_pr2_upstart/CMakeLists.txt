@@ -135,6 +135,8 @@ catkin_package(
 ## in contrast to setup.py, you can choose the destination
 install(PROGRAMS
   scripts/run_stop_server
+  scripts/run_stop_status
+  scripts/joint_limit_watchdog
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
