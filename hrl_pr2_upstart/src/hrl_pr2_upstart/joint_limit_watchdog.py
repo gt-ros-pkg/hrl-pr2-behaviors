@@ -16,24 +16,27 @@ class JointLimitWatchdog(object):
     def __init__(self):
         r_arm_kin = create_kdl_kin('torso_lift_link', 'r_gripper_tool_frame', description_param="/robot_description")
         l_arm_kin = create_kdl_kin('torso_lift_link', 'l_gripper_tool_frame', description_param="/robot_description")
-        self.arm_limits = {'right': r_arm_kin.get_joint_limits(),
-                           'left':  l_arm_kin.get_joint_limits()}
+        head_kin = create_kdl_kin('torso_lift_link', 'head_tilt_link', description_param="/robot_description")
+        self.limits = {'right_arm': r_arm_kin.get_joint_limits(),
+                       'left_arm':  l_arm_kin.get_joint_limits(),
+                       'head':  head_kin.get_joint_limits()}
 
         self.motors_halted = None
         self.outside_limits = None
         self.reset_timer = None
 
-        self.emulate_runstop_service = rospy.ServiceProxy('emulate_runstop', SetRunStop, persistent=True)
-        self.r_arm_state_sub = rospy.Subscriber('r_arm_controller/state', JointTrajectoryControllerState, self.arm_state_cb, 'right')
-        self.l_arm_state_sub = rospy.Subscriber('r_arm_controller/state', JointTrajectoryControllerState, self.arm_state_cb, 'left')
-        self.motor_status_sub = rospy.Subscriber('pr2_ethercat/motors_halted', Bool, self.motor_state_cb)
+        self.emulate_runstop_service = rospy.ServiceProxy('/emulate_runstop', SetRunStop, persistent=True)
+        self.motor_status_sub = rospy.Subscriber('/pr2_ethercat/motors_halted', Bool, self.motor_state_cb)
+        self.r_arm_state_sub = rospy.Subscriber('/r_arm_controller/state', JointTrajectoryControllerState, self.joint_state_cb, 'right_arm')
+        self.l_arm_state_sub = rospy.Subscriber('/r_arm_controller/state', JointTrajectoryControllerState, self.joint_state_cb, 'left_arm')
+        self.head_state_sub = rospy.Subscriber('/head_traj_controller/state', JointTrajectoryControllerState, self.joint_state_cb, 'head')
 
-    def arm_state_cb(self, msg, arm):
+    def arm_state_cb(self, msg, limb):
         if self.motors_halted or self.reset_timer is not None:
             # Expect joints to violate soft limits when motors are halted
             return
         joints = np.array(msg.actual.positions)
-        limits = self.arm_limits[arm]
+        limits = self.limits[limb]
         if any(joints < limits[0]) or any(joints > limits[1]):
             self.halt_motors()
             rospy.logwarn("[%s] Joints outside soft limits.", rospy.get_name())
