@@ -90,7 +90,7 @@ add_service_files(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES hrl_pr2_upstart
-  CATKIN_DEPENDS message_runtime rospy std_msgs std_srvs pr2_power_board
+  CATKIN_DEPENDS message_runtime rospy std_msgs std_srvs pr2_power_board pr2_msgs sound_play
 #  DEPENDS system_lib
 )
 
@@ -137,6 +137,7 @@ install(PROGRAMS
   scripts/run_stop_server
   scripts/run_stop_status
   scripts/joint_limit_watchdog
+  scripts/battery_notifier
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

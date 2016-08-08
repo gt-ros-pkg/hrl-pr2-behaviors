@@ -42,6 +42,8 @@
  <run_depend>std_msgs</run_depend> 
  <run_depend>std_srvs</run_depend> 
  <run_depend>pr2_power_board</run_depend> 
+ <run_depend>pr2_msgs</run_depend> 
+ <run_depend>sound_play</run_depend> 
  <run_depend>message_runtime</run_depend> 
  <run_depend>rosbridge_server</run_depend> 
  <run_depend>roswww</run_depend> 
