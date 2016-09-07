@@ -1,5 +1,5 @@
 <launch>
-  <node name="ar_tool_grasp_action_server" pkg="ar_tool_grasp" type="ar_tool_grasp_server" 
+  <node name="ar_tool_grasp_action_server" pkg="hrl_pr2_tool_grasp" type="ar_tool_grasp_server" 
         args="-s 0.0 0.0 0.15 0.0 90.0 0.0 -g 0.0 0.0 -0.01 0.0 90.0 0.0 -t 10.0 -w 1.0" 
         output="screen"/>
 </launch>

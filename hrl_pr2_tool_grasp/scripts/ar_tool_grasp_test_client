@@ -5,7 +5,7 @@ import sys
 import rospy
 import actionlib
 
-from ar_tool_grasp.msg import ARToolGraspAction, ARToolGraspGoal
+from hrl_pr2_tool_grasp.msg import ARToolGraspAction, ARToolGraspGoal
 
 
 class ARToolGraspTestClient(object):
@@ -30,7 +30,7 @@ class ARToolGraspTestClient(object):
             rospy.logwarn("[%s] Grasp of Tool %d Failed!" % (rospy.get_name(), tag_id))
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
     rospy.init_node('ar_tool_grasp_test_client')
     test_client = ARToolGraspTestClient()
     for tag_id in sys.argv[1:]:
