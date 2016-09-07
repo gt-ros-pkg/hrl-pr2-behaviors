@@ -1,5 +1,17 @@
 <launch>
-  <node name="ar_tool_grasp_action_server" pkg="hrl_pr2_tool_grasp" type="ar_tool_grasp_server" 
-        args="-s 0.0 0.0 0.15 0.0 90.0 0.0 -g 0.0 0.0 -0.01 0.0 90.0 0.0 -t 10.0 -w 1.0" 
-        output="screen"/>
+
+    <group ns="tools">
+        <rosparam ns="scratcher" command="load" file="$(find hrl_pr2_tool_grasp)/params/scratcher.yaml"/>
+        <rosparam ns="shaver" command="load" file="$(find hrl_pr2_tool_grasp)/params/shaver.yaml"/>
+        <rosparam ns="towel" command="load" file="$(find hrl_pr2_tool_grasp)/params/towel.yaml"/>
+        <rosparam ns="toothbrush" command="load" file="$(find hrl_pr2_tool_grasp)/params/toothbrush.yaml"/>
+        <rosparam ns="lotion_applicator" command="load" file="$(find hrl_pr2_tool_grasp)/params/lotion_applicator.yaml"/>
+    </group>
+
+    <include file="$(find hrl_pr2_tool_grasp)/launch/pr2_indiv_no_kinect.launch" />
+
+    <node name="ar_tool_grasp_action_server" pkg="hrl_pr2_tool_grasp" type="ar_tool_grasp_server" 
+          args="-s 0.0 0.0 0.15 0.0 90.0 0.0 -g 0.0 0.0 -0.01 0.0 90.0 0.0 -t 10.0 -w 1.0" 
+          output="screen"/>
+
 </launch>

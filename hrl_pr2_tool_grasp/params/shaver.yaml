@@ -1,0 +1,7 @@
+ar_tag_id: 0
+grasp_from_tag:
+    position: [0,0,-0.02]
+    orientation: [0,0,0,1]
+ee_from_tool_frame:
+    position: [0.07, 0, 0]
+    orientation: [0, 0, 0, 1]
