@@ -15,33 +15,34 @@ from hrl_pr2_tool_grasp.msg import ARToolGraspAction, ARToolGraspFeedback, ARToo
 
 
 class ARTagGraspAction(object):
-    def __init__(self, tag_pose_window=1.0, progress_timeout=5.,
+    def __init__(self, arm, tag_pose_window=1.0, progress_timeout=5.,
                  setup_transform=None, grasp_transform=None):
         # TODO: GET ALL THE MAGIC NUMBERS INTO PARAMETERS
         # TODO: Collect all magic strings into parameters
+        self.arm = "right_arm" if arm[0] == 'r' else 'left_arm'
         self.tag_pose_window = rospy.Duration(tag_pose_window)
         self.progress_timeout = rospy.Duration(progress_timeout)
         self.setup_transform = setup_transform if setup_transform is not None else [0]*6
         self.grasp_transform = grasp_transform if grasp_transform is not None else [0]*6
 
         self.gripper_pose = None
-        self.gripper_pose_sub = rospy.Subscriber('/right_arm/haptic_mpc/gripper_pose', PoseStamped, self.gripper_pose_cb)
+        self.gripper_pose_sub = rospy.Subscriber('/%s/haptic_mpc/gripper_pose' % self.arm, PoseStamped, self.gripper_pose_cb)
 
         self.tag_poses = {}
         self.tag_sub = rospy.Subscriber('ar_pose_marker', AlvarMarkers, self.tag_pose_cb)
 
-        self.goal_pose_pub = rospy.Publisher('/right_arm/haptic_mpc/goal_pose', PoseStamped, queue_size=4)
+        self.goal_pose_pub = rospy.Publisher('/%s/haptic_mpc/goal_pose' % self.arm, PoseStamped, queue_size=4)
         self.test_pub_1 = rospy.Publisher('test_pose_1', PoseStamped, queue_size=4, latch=True)
         self.test_pub_2 = rospy.Publisher('test_pose_2', PoseStamped, queue_size=4, latch=True)
         self.last_pos_err = self.last_ort_err = np.inf
         self.last_progress_time = rospy.Time.now()
-        self.gripper_ac = actionlib.SimpleActionClient('l_gripper_controller/gripper_action',
+        self.gripper_ac = actionlib.SimpleActionClient('%s_gripper_controller/gripper_action' % self.arm[0],
                                                        Pr2GripperCommandAction)
         rospy.loginfo("[%s] Waiting for gripper action server", rospy.get_name())
         if self.gripper_ac.wait_for_server(rospy.Duration(10.0)):
-            rospy.loginfo("[%s] Gripper action server started", rospy.get_name())
+            rospy.loginfo("[%s] %s Gripper Action Client Connected.", rospy.get_name(), self.arm)
         else:
-            rospy.logerr("[%s] Gripper action server not found", rospy.get_name())
+            rospy.logerr("[%s] %s Gripper action server not found", rospy.get_name(), self.arm)
         self.action_server = actionlib.SimpleActionServer('ar_tool_grasp_action',
                                                           ARToolGraspAction,
                                                           self.grasp_cb,
@@ -282,12 +283,14 @@ def main():
                         help="Duration in seconds to wait for 5 percent improvement in error before declaring failure.")
     parser.add_argument('-w', '--window', action="store", type=float, default=1.0,
                         help="Duration in seconds of windowed average of tag pose.")
+    parser.add_argument('-a', '--arm', action="store", default="right", help="Which arm to use to grasp the tool.")
     args = parser.parse_known_args()[0]
 
     rospy.init_node('ar_tag_grasp_action')
     args.setup_transform[3:] = np.radians(args.setup_transform[3:])
     args.grasp_transform[3:] = np.radians(args.grasp_transform[3:])
-    grasp_action = ARTagGraspAction(tag_pose_window=args.window,
+    grasp_action = ARTagGraspAction(arm=args.arm,
+                                    tag_pose_window=args.window,
                                     progress_timeout=args.timeout,
                                     setup_transform=args.setup_transform,
                                     grasp_transform=args.grasp_transform)
