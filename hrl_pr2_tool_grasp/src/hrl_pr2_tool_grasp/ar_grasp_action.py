@@ -198,15 +198,20 @@ class ARTagGraspAction(object):
 
     def grasp_cb(self, grasp_goal):
         tag_id = grasp_goal.tag_id
-        tag_pose = self.get_current_tag_pose(grasp_goal.tag_id)
+        tag_pose = self.get_current_tag_pose(tag_id)
+
+        # initialize result
         result = ARToolGraspResult()
         result.succeeded = False
+
+        # If tag pose isn't know, fail here
         if tag_pose is None:
             result.final_pose = copy(self.gripper_pose)
             msg = "[%s] Failed to grasp tag id %d: Location of tag unknown." % (rospy.get_name(), tag_id)
             rospy.loginfo(msg)
             self.action_server.set_aborted(result, msg)
             return
+
         rospy.loginfo("[%s] Grasping tag id: %d", rospy.get_name(), tag_id)
         self.goal_pose = self.setup_from_tag_pose(tag_pose)
         self.open_gripper()
