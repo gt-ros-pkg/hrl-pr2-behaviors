@@ -1,4 +1,4 @@
-ar_tag_id: 5
+tag_id: 5
 grasp_from_tag:
     position: [0,0,-0.02]
     orientation: [0,0,0,1]
