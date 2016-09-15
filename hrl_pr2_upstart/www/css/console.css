@@ -1,0 +1,70 @@
+body {
+    background-color: lightgray;
+}
+
+#message {
+    text-align: center;
+}
+
+#button-container {
+    width: 60%;
+    height: 80%;
+    margin-left: 15%;
+    padding: 1%;
+}
+
+button {
+    width: 90%;
+    height: 30%;
+    display: block;
+    margin-left: 5%;
+    margin-top: 5%;
+    border: black;
+}
+
+button.half-width {
+    display: inline-block;
+    width: 40%;
+    margin-right:4.5%
+}
+
+.no-connect {
+    pointer-events:none;
+    background: gray;
+}
+
+.stop {
+    background: red;
+}
+
+.stop:hover {
+    background: #bd5757;
+}
+
+.stop:active{
+    background: #680000;
+}
+
+.reset{
+    background: green;
+}
+
+.reset:hover {
+    background: #57bd57;
+}
+
+.reset:active{
+    background: #006800;
+}
+
+#calibration-status{
+    text-align:center;
+    font-size: 3em;
+    font-weight: bold;
+    color: green;
+}
+
+.ui-button-text {
+    font-size: 3em;
+}
+

@@ -22,7 +22,8 @@ sleep 2
 
 beep -f 523.25 -l 250 -n -f 587.33 -l 250 -n -f 659.26 -l 250 -n -f 783.99 -l 500
 # Run robot start
-/bin/su pgrice -c "source /home/pgrice/.bashrc && roslaunch /etc/ros/robot.launch >> /tmp/auto_robot_start.log 2>&1 &"
+#/bin/su pgrice -c "source /home/pgrice/.bashrc && roslaunch /etc/ros/robot.launch >> /tmp/auto_robot_start.log 2>&1 &"
+/bin/su pgrice -c "source /home/pgrice/.bashrc && robot start -f >> /tmp/auto_robot_start.log 2>&1 &"
 
 sleep 15
 beep -f 659.26 -l 250 -n -f 783.99 -l 250 -n -f 880.00 -l 250 -n -f 1046.50 -l 500

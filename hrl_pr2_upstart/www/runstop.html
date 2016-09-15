@@ -1,7 +1,7 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>PR2 Run-stop Emulator</title>
+  <title>PR2 Console</title>
   <!-- Jquery and JQueryUI -->
   <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.js"></script>
   <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/themes/sunny/jquery-ui.css">
@@ -11,16 +11,18 @@
   <script src="http://cdn.robotwebtools.org/js-bson/current/bson.min.js"></script>
   <script src="http://cdn.robotwebtools.org/roslibjs/current/roslib.js"></script>
   <!-- Runstop emulator functions -->
-  <script type="text/javascript" src="js/runstop.js"></script>
-  <link rel="stylesheet" href="css/runstop.css">
+  <script type="text/javascript" src="js/console.js"></script>
+  <link rel="stylesheet" href="css/console.css">
 </head>
 
 <body>
     <div id="button-container">
-         <button id="stop-button" class='no-connect'> STOP </button>
-         <button id="reset-button" class='no-connect'> RESET </button>
          <div id="message"></div>
+         <button id="runstop-button" class='no-connect'> HALT Robot </button>
+         <button id="relaunch-vci-button" class='half-width no-connect'> Restart Web Interface </button>
+         <button id="robot-start-button" class='half-width no-connect'> Restart ALL robot software </button>
     </div>
+    <div id="calibration-status">Calibration Status: Unknown</div>
 </body>
 
 </html>
