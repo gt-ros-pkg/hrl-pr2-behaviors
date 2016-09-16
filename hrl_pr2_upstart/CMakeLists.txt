@@ -138,6 +138,7 @@ install(PROGRAMS
   scripts/run_stop_status
   scripts/joint_limit_watchdog
   scripts/battery_notifier
+  scripts/software_reset
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

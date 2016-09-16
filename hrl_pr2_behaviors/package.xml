@@ -19,6 +19,7 @@
   <run_depend>hrl_pr2_ar_servo</run_depend>
   <run_depend>hrl_pr2_tool_grasp</run_depend>
   <run_depend>hrl_pr2_traj_playback</run_depend>
+  <run_depend>hrl_pr2_upstart</run_depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

@@ -1,4 +1,4 @@
-(function ($, ROSLIB){
+function ($, ROSLIB){
     var ROBOT = window.location.host.split(':')[0];//Use localhost when serving website directly from robot 
     var PORT = '1820';//Must match port on which rosbridge is being served
     var ros = new ROSLIB.Ros({url: 'ws://'+ ROBOT + ':'+ PORT});
