@@ -8,7 +8,6 @@ body {
 
 #button-container {
     width: 60%;
-    height: 80%;
     margin-left: 15%;
     padding: 1%;
 }
@@ -62,6 +61,24 @@ button.half-width {
     font-size: 3em;
     font-weight: bold;
     color: green;
+}
+
+#robot-start-button{
+    background: orange;
+}
+
+#iface_link {
+    text-align: center;
+    font-size: 2em;
+    font-weight: bold;
+}
+
+.running{
+    background: red;
+}
+
+.stopped{
+    background: green;
 }
 
 .ui-button-text {

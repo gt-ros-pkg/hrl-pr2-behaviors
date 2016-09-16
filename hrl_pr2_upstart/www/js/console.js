@@ -82,24 +82,69 @@
         calibrationStateSub.subscribe(updateCalibrationStatus);
 
         // Connection to software reset services
-        var relaunchVCIService = new ROSLIB.Service({
+        var stopVCIService = new ROSLIB.Service({
             ros: ros,
-            name:'/relaunch_vci',
+            name:'/stop_vci',
+            serviceType: 'std_srvs/Trigger'}
+        );
+
+        var startVCIService = new ROSLIB.Service({
+            ros: ros,
+            name:'/start_vci',
             serviceType: 'std_srvs/Empty'}
         );
 
-        var relaunchVCI = function () {
-            relaunchVCIService.callService({});
+        var triggerCB = function (resp) {
+            console.log("Trigger Succeeded: ", resp.success);
+            console.log("Trigger Msg: ", resp.message);
         };
+
+        $('#iface_link > a').attr('href', 'http://' + window.location.hostname+':8008/assistive_teleop/vci.html');
+        var vci_running = false;
+        var updateVCIRunning = function (boolMsg) {
+            vci_running = boolMsg.data;
+            if (vci_running) {
+                $('#iface_link').show();
+                $('#relaunch-vci-button').removeClass('stopped').addClass('running');
+                $('#relaunch-vci-button > span').text('Shutdown Web Interface');
+            } else {
+                $('#iface_link').hide();
+                $('#relaunch-vci-button').removeClass('running').addClass('stopped');
+                $('#relaunch-vci-button > span').text('Start Web Interface');
+            }
+        };
+
+        var vciRunningSub = new ROSLIB.Topic({
+            ros: ros, 
+            name: "/vci_running",
+            messageType: "std_msgs/Bool"
+        });
+        vciRunningSub.subscribe(updateVCIRunning);
+
+        var stopStartVCICB = function (event) {
+            if (vci_running) {
+                stopVCIService.callService({}, triggerCB);
+            } else {
+                startVCIService.callService({}, triggerCB);
+            }
+        };
+        $('#relaunch-vci-button').button().on('click', stopStartVCICB);
 
         var robotStartService = new ROSLIB.Service({
             ros: ros,
             name:'/robot_start',
-            serviceType: 'std_srvs/Empty'}
+            serviceType: 'std_srvs/Trigger'}
         );
-        var runRobotStart = function () {
-            robotStartService.callService({});
+
+        var callRobotStart = function (event) {
+            var confirmed = confirm("Are you sure you want to restart all the robot's software? This will cause the motors to lose power briefly.");
+            if (confirmed) {
+                robotStartService.callService({});
+            }
         };
+
+        $('#robot-start-button').button().on('click', callRobotStart);
+        
 
     });
 }(jQuery, ROSLIB));
