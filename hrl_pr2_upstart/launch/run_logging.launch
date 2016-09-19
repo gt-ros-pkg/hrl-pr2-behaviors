@@ -1,0 +1,21 @@
+<launch>
+    <node name="data_bag" pkg="rosbag" type="record" args="-j -o /home/pgrice/trial_logs/run-log --size 250 --split
+                                                           --topic
+
+                                                            /battery/server2
+                                                            /calibrated
+                                                            /diagnostics
+                                                            /diagnostics_agg
+                                                            /joy
+                                                            /power_board/state
+                                                            /power_state
+                                                            /pr2_etherCAT/motors_halted
+                                                            /pr2_ethercat/motors_halted
+                                                            /robotsound
+                                                            /rosout
+                                                            /rosout_agg
+                                                            /runstop_status
+                                                            /vci_running
+                                                            /joint_states_throttled
+    "/>
+</launch>
