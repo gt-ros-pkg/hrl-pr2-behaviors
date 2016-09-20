@@ -104,9 +104,9 @@
         var updateVCIRunning = function (boolMsg) {
             vci_running = boolMsg.data;
             if (vci_running) {
-                $('#iface_link').show();
                 $('#relaunch-vci-button').removeClass('stopped').addClass('running');
                 $('#relaunch-vci-button > span').text('Shutdown Web Interface');
+                setTimeout(function() {$('#iface_link').show();}, 3600);
             } else {
                 $('#iface_link').hide();
                 $('#relaunch-vci-button').removeClass('running').addClass('stopped');
