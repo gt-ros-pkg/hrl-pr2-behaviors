@@ -29,7 +29,7 @@ button.half-width {
 
 .no-connect {
     pointer-events:none;
-    background: gray;
+    background: gray !important;
 }
 
 .stop {
