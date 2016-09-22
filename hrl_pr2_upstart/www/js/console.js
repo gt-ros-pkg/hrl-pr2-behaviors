@@ -42,10 +42,10 @@
             motorsHalted = boolMsg.data;
             if (motorsHalted) {
                 $('#runstop-button').removeClass('stop').addClass('reset');
-                $('#runstop-button > span').text('Re-enable Motors');
+                $('#runstop-button > span').text('Enable Motors');
             } else {
                 $('#runstop-button').removeClass('reset').addClass('stop');
-                $('#runstop-button > span').text('Halt Motors');
+                $('#runstop-button > span').text('Disable Motors');
             }
         };
 
