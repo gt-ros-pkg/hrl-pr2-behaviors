@@ -87,9 +87,9 @@
         var calibrated = null;
         var updateCalibrationStatus = function (boolMsg) {
             if (boolMsg.data) {
-                $('#calibration-status').text('Calibration: Complete');
+                $('#calibration-status').text('Calibration: Complete').css('color','green');
             } else {
-                $('#calibration-status').text('Calibration: NOT COMPLETE');
+                $('#calibration-status').text('Calibration: NOT COMPLETE').css('color','red');
             }
         };
 
