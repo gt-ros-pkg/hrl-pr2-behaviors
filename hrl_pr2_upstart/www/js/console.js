@@ -40,10 +40,10 @@
         var motorsHalted = null;
         var updateMotorState = function (boolMsg) {
             motorsHalted = boolMsg.data;
-            if (motorsHalted) {
+            if (motorsHalted && !hardwareStopped) {
                 $('#runstop-button').removeClass('stop').addClass('reset');
                 $('#runstop-button > span').text('Enable Motors');
-            } else {
+            } else if (!motorsHalted) {
                 $('#runstop-button').removeClass('reset').addClass('stop');
                 $('#runstop-button > span').text('Disable Motors');
             }
@@ -55,6 +55,25 @@
             messageType: 'std_msgs/Bool'
         });
         motorStateSub.subscribe(updateMotorState);
+        
+        var hardwareStopped = false;
+        var hardwareRunStopState = function (powerStateMsg) {
+             hardwareStopped = (powerStateMsg.run_stop && powerStateMsg.wireless_stop) ? false : true;
+            if (hardwareStopped) {
+                $('#runstop-button').removeClass('stop').addClass('reset');
+                $('#runstop-button > span').text('[MUST RESET RUNSTOP]');
+                $('#runstop-button').css({"pointer-events":"none"});
+            } else {
+                $('#runstop-button').css({"pointer-events":"all"});
+            }
+        };
+
+        var powerStateSub = new ROSLIB.Topic({
+            ros: ros,
+            name: "/power_board/state",
+            messageType: 'pr2_msgs/PowerBoardState'
+        });
+        powerStateSub.subscribe(hardwareRunStopState);
 
         var runstopToggleCB = function (event) {
             var fn = motorsHalted ? reset : stop; 
