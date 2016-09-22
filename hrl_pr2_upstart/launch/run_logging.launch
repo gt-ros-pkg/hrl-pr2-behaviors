@@ -1,5 +1,5 @@
 <launch>
-    <node name="data_bag" pkg="rosbag" type="record" args="-j -o /home/pgrice/trial_logs/run-log --size 250 --split
+    <node name="run_log_bag" pkg="rosbag" type="record" args="-j -o /home/pgrice/trial_logs/run-log --size 250 --split
                                                            --topic
 
                                                             /battery/server2
